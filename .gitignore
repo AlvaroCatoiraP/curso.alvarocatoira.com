@@ -1,4 +1,5 @@
-includes/config.php
+config.php
+db.php
 .env
 node_modules/
 vendor/
