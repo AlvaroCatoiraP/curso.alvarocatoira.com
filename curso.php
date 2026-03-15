@@ -1,76 +1,57 @@
 <?php
-require_once 'includes/auth.php';
-require_once 'includes/lang.php';
-require_once 'includes/db.php';
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/lang.php';
+require_once __DIR__ . '/includes/db.php';
 
 exiger_connexion();
 
 $langue = $lang ?? 'es';
+if (!in_array($langue, ['es', 'fr'], true)) {
+    $langue = 'es';
+}
 
-function h(?string $value): string {
+function h(?string $value): string
+{
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
 }
 
-function getTableColumns(PDO $pdo, string $table): array {
-    $stmt = $pdo->query("SHOW COLUMNS FROM `$table`");
-    $columns = $stmt->fetchAll(PDO::FETCH_COLUMN);
-    return is_array($columns) ? $columns : [];
-}
-
-function optionalColumnSql(array $existingColumns, string $column): string {
-    if (in_array($column, $existingColumns, true)) {
-        return "COALESCE(cc_lang.$column, cc_es.$column) AS $column";
-    }
-    return "NULL AS $column";
-}
-
-function hasContent(?string $value): bool {
+function hasContent(?string $value): bool
+{
     return trim((string)$value) !== '';
 }
 
-function renderRichText(?string $text): string {
+function renderRichText(?string $text): string
+{
     $text = trim((string)$text);
 
     if ($text === '') {
         return '';
     }
 
-    $lines = preg_split('/\R/u', $text);
+    $paragraphs = preg_split('/\R{2,}/u', $text) ?: [];
     $html = '';
-    $paragraphBuffer = [];
 
-    $flushParagraph = function () use (&$paragraphBuffer, &$html) {
-        if (!empty($paragraphBuffer)) {
-            $content = implode(' ', array_map('trim', $paragraphBuffer));
-            $html .= '<p class="text-slate-300 leading-8 mb-4">' . nl2br(h($content)) . '</p>';
-            $paragraphBuffer = [];
-        }
-    };
-
-    foreach ($lines as $line) {
-        $trimmed = trim($line);
-
-        if ($trimmed === '') {
-            $flushParagraph();
+    foreach ($paragraphs as $paragraph) {
+        $paragraph = trim($paragraph);
+        if ($paragraph === '') {
             continue;
         }
 
-        $paragraphBuffer[] = $trimmed;
+        $html .= '<p class="text-slate-300 leading-8 mb-4">' . nl2br(h($paragraph)) . '</p>';
     }
-
-    $flushParagraph();
 
     return $html;
 }
 
-function extractLines(?string $text): array {
+function extractLines(?string $text): array
+{
     $text = trim((string)$text);
 
     if ($text === '') {
         return [];
     }
 
-    $lines = preg_split('/\R/u', $text);
+    $lines = preg_split('/\R/u', $text) ?: [];
     $result = [];
 
     foreach ($lines as $line) {
@@ -91,65 +72,28 @@ function extractLines(?string $text): array {
     return $result;
 }
 
-function buildTheory(array $chapitre): string {
-    $parts = [];
-
-    $fields = [
-        'introduccion',
-        'objetivos',
-        'teoria_larga',
-        'teoria_complementaria',
-        'definiciones_clave',
-        'conceptos_clave',
-        'cuando_usarlo',
-        'comparacion',
-        'intuicion',
-        'analogia',
-        'explicacion_ejemplo_simple',
-        'explicacion_ejemplo_avanzado',
-        'errores_comunes',
-        'buenas_practicas',
-        'aplicacion_real',
-        'preguntas_frecuentes',
-        'curiosidades',
-        'resumen_final'
-    ];
-
-    foreach ($fields as $field) {
-        if (!empty($chapitre[$field]) && trim((string)$chapitre[$field]) !== '') {
-            $parts[] = trim((string)$chapitre[$field]);
-        }
-    }
-
-    return implode("\n\n", $parts);
-}
-
-function buildFallbackExercises(array $chapitre, string $langue): array {
+function buildFallbackExercises(array $chapitre, string $langue): array
+{
     $titulo = trim((string)($chapitre['titulo'] ?? ''));
 
     if ($langue === 'fr') {
         return [
-            "Explique avec tes mots ce qu’est « {$titulo} » et donne un exemple simple.",
-            "Écris un petit exercice pratique lié à « {$titulo} » puis essaie de le résoudre."
+            "Explique avec tes mots le concept « {$titulo} » et donne un exemple simple.",
+            "Réalise un petit exercice pratique lié à « {$titulo} »."
         ];
     }
 
     return [
-        "Explica con tus palabras qué es « {$titulo} » y pon un ejemplo sencillo.",
-        "Haz un pequeño ejercicio práctico relacionado con « {$titulo} » e intenta resolverlo."
+        "Explica con tus palabras el concepto « {$titulo} » y da un ejemplo simple.",
+        "Haz un pequeño ejercicio práctico relacionado con « {$titulo} »."
     ];
 }
 
-function extractTwoExercises(array $chapitre, string $langue): array {
+function extractTwoExercises(array $chapitre, string $langue): array
+{
     $exercises = [];
 
-    $sources = [
-        'ejercicios_guiados',
-        'mini_quiz',
-        'ejemplo_error'
-    ];
-
-    foreach ($sources as $source) {
+    foreach (['ejercicios_guiados', 'mini_quiz'] as $source) {
         $lines = extractLines($chapitre[$source] ?? '');
 
         foreach ($lines as $line) {
@@ -161,9 +105,7 @@ function extractTwoExercises(array $chapitre, string $langue): array {
     }
 
     if (count($exercises) < 2) {
-        $fallbacks = buildFallbackExercises($chapitre, $langue);
-
-        foreach ($fallbacks as $fallback) {
+        foreach (buildFallbackExercises($chapitre, $langue) as $fallback) {
             if (count($exercises) >= 2) {
                 break;
             }
@@ -174,70 +116,12 @@ function extractTwoExercises(array $chapitre, string $langue): array {
     return array_slice($exercises, 0, 2);
 }
 
-$existingColumns = getTableColumns($pdo, 'chapitres_contenu');
-
-$optionalColumns = [
-    'conceptos_clave',
-    'cuando_usarlo',
-    'comparacion',
-    'preguntas_frecuentes',
-    'aplicacion_real',
-    'teoria_complementaria',
-    'definiciones_clave',
-    'analogia',
-    'ejercicios_guiados',
-    'curiosidades',
-    'ejemplo_error'
-];
-
-$optionalSelects = [];
-foreach ($optionalColumns as $column) {
-    $optionalSelects[] = optionalColumnSql($existingColumns, $column);
-}
-
-$sql = "
-    SELECT
-        c.id,
-        c.code,
-        c.ordre_affichage,
-
-        COALESCE(cc_lang.titulo, cc_es.titulo) AS titulo,
-        COALESCE(cc_lang.introduccion, cc_es.introduccion) AS introduccion,
-        COALESCE(cc_lang.objetivos, cc_es.objetivos) AS objetivos,
-        COALESCE(cc_lang.teoria_larga, cc_es.teoria_larga) AS teoria_larga,
-        COALESCE(cc_lang.intuicion, cc_es.intuicion) AS intuicion,
-        COALESCE(cc_lang.explicacion_ejemplo_simple, cc_es.explicacion_ejemplo_simple) AS explicacion_ejemplo_simple,
-        COALESCE(cc_lang.explicacion_ejemplo_avanzado, cc_es.explicacion_ejemplo_avanzado) AS explicacion_ejemplo_avanzado,
-        COALESCE(cc_lang.errores_comunes, cc_es.errores_comunes) AS errores_comunes,
-        COALESCE(cc_lang.buenas_practicas, cc_es.buenas_practicas) AS buenas_practicas,
-        COALESCE(cc_lang.resumen_final, cc_es.resumen_final) AS resumen_final,
-        COALESCE(cc_lang.mini_quiz, cc_es.mini_quiz) AS mini_quiz,
-        " . implode(",\n        ", $optionalSelects) . "
-
-    FROM chapitres c
-
-    LEFT JOIN chapitres_contenu cc_lang
-        ON cc_lang.chapitre_id = c.id
-        AND cc_lang.langue = ?
-
-    LEFT JOIN chapitres_contenu cc_es
-        ON cc_es.chapitre_id = c.id
-        AND cc_es.langue = 'es'
-
-    WHERE c.visible = 1
-    ORDER BY c.ordre_affichage ASC
-";
-
-$stmt = $pdo->prepare($sql);
-$stmt->execute([$langue]);
-$chapitres = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
 $t = [
     'es' => [
         'page_title' => 'Curso de Python',
         'course' => 'Curso',
         'python_full' => 'Python completo',
-        'header_text' => 'Cada capítulo contiene únicamente el título, una teoría extensa y dos ejercicios.',
+        'header_text' => 'Cada capítulo contiene teoría clara y ejercicios prácticos.',
         'language' => 'Idioma',
         'dashboard' => 'Dashboard',
         'practice' => 'Prácticas',
@@ -251,13 +135,14 @@ $t = [
         'previous' => 'Capítulo anterior',
         'next' => 'Capítulo siguiente',
         'progress' => 'Progreso',
-        'of' => 'de'
+        'of' => 'de',
+        'no_theory' => 'Este capítulo todavía no tiene teoría.'
     ],
     'fr' => [
         'page_title' => 'Cours Python',
         'course' => 'Cours',
         'python_full' => 'Python complet',
-        'header_text' => 'Chaque chapitre contient uniquement le titre, une théorie longue et deux exercices.',
+        'header_text' => 'Chaque chapitre contient une théorie claire et des exercices pratiques.',
         'language' => 'Langue',
         'dashboard' => 'Dashboard',
         'practice' => 'Exercices',
@@ -271,15 +156,41 @@ $t = [
         'previous' => 'Chapitre précédent',
         'next' => 'Chapitre suivant',
         'progress' => 'Progression',
-        'of' => 'sur'
+        'of' => 'sur',
+        'no_theory' => 'Ce chapitre n’a pas encore de théorie.'
     ]
 ];
 
 $tr = $t[$langue] ?? $t['es'];
 
-$currentCode = isset($_GET['chap']) ? trim((string)$_GET['chap']) : '';
+$sql = "
+    SELECT
+        c.id,
+        c.code,
+        c.ordre_affichage,
+        c.visible,
+        CASE
+            WHEN :langue = 'fr' THEN COALESCE(c.titre_fr, c.titre_es, '')
+            ELSE COALESCE(c.titre_es, c.titre_fr, '')
+        END AS titulo,
+        cc.teoria_larga,
+        cc.ejercicios_guiados,
+        cc.mini_quiz
+    FROM chapitres c
+    LEFT JOIN chapitres_contenu cc
+        ON cc.chapitre_id = c.id
+        AND cc.langue = :langue
+    WHERE c.visible = 1
+    ORDER BY c.ordre_affichage ASC, c.id ASC
+";
 
+$stmt = $pdo->prepare($sql);
+$stmt->execute(['langue' => $langue]);
+$chapitres = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$currentCode = isset($_GET['chap']) ? trim((string)$_GET['chap']) : '';
 $currentIndex = 0;
+
 if (!empty($chapitres) && $currentCode !== '') {
     foreach ($chapitres as $index => $chap) {
         if (($chap['code'] ?? '') === $currentCode) {
@@ -293,7 +204,7 @@ $currentChapitre = $chapitres[$currentIndex] ?? null;
 $previousChapitre = $chapitres[$currentIndex - 1] ?? null;
 $nextChapitre = $chapitres[$currentIndex + 1] ?? null;
 
-$theoryText = $currentChapitre ? buildTheory($currentChapitre) : '';
+$theoryText = $currentChapitre['teoria_larga'] ?? '';
 $exercises = $currentChapitre ? extractTwoExercises($currentChapitre, $langue) : [];
 ?>
 <!DOCTYPE html>
@@ -324,10 +235,12 @@ $exercises = $currentChapitre ? extractTwoExercises($currentChapitre, $langue) :
                     <?= h($tr['language']) ?>
                 </p>
                 <div class="flex gap-2 mt-3">
-                    <a href="?lang=es<?= $currentChapitre ? '&chap=' . urlencode($currentChapitre['code']) : '' ?>" class="px-3 py-2 rounded-xl text-sm font-semibold transition <?= $langue === 'es' ? 'bg-sky-500 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700' ?>">
+                    <a href="?lang=es<?= $currentChapitre ? '&chap=' . urlencode($currentChapitre['code']) : '' ?>"
+                       class="px-3 py-2 rounded-xl text-sm font-semibold transition <?= $langue === 'es' ? 'bg-sky-500 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700' ?>">
                         ES
                     </a>
-                    <a href="?lang=fr<?= $currentChapitre ? '&chap=' . urlencode($currentChapitre['code']) : '' ?>" class="px-3 py-2 rounded-xl text-sm font-semibold transition <?= $langue === 'fr' ? 'bg-sky-500 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700' ?>">
+                    <a href="?lang=fr<?= $currentChapitre ? '&chap=' . urlencode($currentChapitre['code']) : '' ?>"
+                       class="px-3 py-2 rounded-xl text-sm font-semibold transition <?= $langue === 'fr' ? 'bg-sky-500 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700' ?>">
                         FR
                     </a>
                 </div>
@@ -365,12 +278,44 @@ $exercises = $currentChapitre ? extractTwoExercises($currentChapitre, $langue) :
                         <a href="dashboard.php" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl font-semibold transition">
                             <?= h($tr['dashboard']) ?>
                         </a>
-                        <a href="ejercicios.php" class="bg-sky-500 hover:bg-sky-600 px-4 py-2 rounded-xl font-semibold transition">
-                            <?= h($tr['practice']) ?>
-                        </a>
+
+                        <?php if ($currentChapitre): ?>
+                            <a href="ejercicios.php?chap=<?= urlencode($currentChapitre['code']) ?>&lang=<?= h($langue) ?>"
+                               class="bg-sky-500 hover:bg-sky-600 px-4 py-2 rounded-xl font-semibold transition">
+                                <?= h($tr['practice']) ?>
+                            </a>
+                        <?php else: ?>
+                            <span class="bg-slate-800 text-slate-400 px-4 py-2 rounded-xl font-semibold">
+                                <?= h($tr['practice']) ?>
+                            </span>
+                        <?php endif; ?>
                     </div>
                 </div>
             </header>
+
+            <div class="lg:hidden max-w-5xl mx-auto px-6 pt-6">
+                <?php if (!empty($chapitres)): ?>
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                        <label for="chapitre_mobile" class="block text-sm font-semibold text-slate-300 mb-2">
+                            <?= h($tr['chapter']) ?>
+                        </label>
+                        <select
+                            id="chapitre_mobile"
+                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3"
+                            onchange="if(this.value) window.location.href=this.value;"
+                        >
+                            <?php foreach ($chapitres as $chapitre): ?>
+                                <option
+                                    value="?lang=<?= h($langue) ?>&chap=<?= urlencode($chapitre['code']) ?>"
+                                    <?= ($currentChapitre && $chapitre['code'] === $currentChapitre['code']) ? 'selected' : '' ?>
+                                >
+                                    <?= (int)$chapitre['ordre_affichage'] ?>. <?= h($chapitre['titulo'] ?: $tr['untitled']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                <?php endif; ?>
+            </div>
 
             <?php if (empty($chapitres) || !$currentChapitre): ?>
                 <div class="max-w-5xl mx-auto px-6 py-10">
@@ -402,7 +347,12 @@ $exercises = $currentChapitre ? extractTwoExercises($currentChapitre, $langue) :
                             <h3 class="text-2xl font-semibold text-sky-300 mb-4">
                                 <?= h($tr['theory']) ?>
                             </h3>
-                            <?= renderRichText($theoryText) ?>
+
+                            <?php if (hasContent($theoryText)): ?>
+                                <?= renderRichText($theoryText) ?>
+                            <?php else: ?>
+                                <p class="text-slate-400"><?= h($tr['no_theory']) ?></p>
+                            <?php endif; ?>
                         </div>
 
                         <div class="bg-emerald-950/20 border border-emerald-900 rounded-2xl p-6">
@@ -428,7 +378,8 @@ $exercises = $currentChapitre ? extractTwoExercises($currentChapitre, $langue) :
                     <section class="grid md:grid-cols-2 gap-4">
                         <div>
                             <?php if ($previousChapitre): ?>
-                                <a href="?lang=<?= h($langue) ?>&chap=<?= urlencode($previousChapitre['code']) ?>" class="block bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 hover:bg-slate-800/60 transition">
+                                <a href="?lang=<?= h($langue) ?>&chap=<?= urlencode($previousChapitre['code']) ?>"
+                                   class="block bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 hover:bg-slate-800/60 transition">
                                     <p class="text-slate-400 text-sm mb-2">← <?= h($tr['previous']) ?></p>
                                     <p class="font-semibold text-lg"><?= h($previousChapitre['titulo']) ?></p>
                                 </a>
@@ -437,7 +388,8 @@ $exercises = $currentChapitre ? extractTwoExercises($currentChapitre, $langue) :
 
                         <div>
                             <?php if ($nextChapitre): ?>
-                                <a href="?lang=<?= h($langue) ?>&chap=<?= urlencode($nextChapitre['code']) ?>" class="block bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 hover:bg-slate-800/60 transition text-left md:text-right">
+                                <a href="?lang=<?= h($langue) ?>&chap=<?= urlencode($nextChapitre['code']) ?>"
+                                   class="block bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 hover:bg-slate-800/60 transition text-left md:text-right">
                                     <p class="text-slate-400 text-sm mb-2"><?= h($tr['next']) ?> →</p>
                                     <p class="font-semibold text-lg"><?= h($nextChapitre['titulo']) ?></p>
                                 </a>
