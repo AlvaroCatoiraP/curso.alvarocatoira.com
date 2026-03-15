@@ -133,6 +133,7 @@ $sqlChapitre = "
     LIMIT 1
 ";
 
+
 $stmtChapitre = $pdo->prepare($sqlChapitre);
 $stmtChapitre->execute([
     'langue' => $langue,
