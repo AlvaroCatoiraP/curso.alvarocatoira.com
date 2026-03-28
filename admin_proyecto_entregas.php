@@ -207,6 +207,12 @@ $entregas = $stmtEntregas->fetchAll(PDO::FETCH_ASSOC);
                                     >
                                         Ver entregas de alumnos
                                     </a>
+                                    <a
+                                        href="admin_editar_proyecto_entrega.php?id=<?= (int)$entrega['id'] ?>"
+                                        class="bg-amber-500 hover:bg-amber-600 px-4 py-2 rounded-xl font-semibold inline-block"
+                                    >
+                                        Editar entrega
+                                    </a>
                                 </div>
                             </div>
                         </div>

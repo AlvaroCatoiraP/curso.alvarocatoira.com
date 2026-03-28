@@ -7,3 +7,6 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^admin/admin_dashboard$ admin/admin_dashboard.php [L,QSA]
 RewriteRule ^admin/admin_chapitres$ admin/admin_chapitres.php [L,QSA]
 RewriteRule ^alumno/dashboard$ alumno/dashboard.php [L,QSA]
+php_value upload_max_filesize 64M
+php_value post_max_size 64M
+

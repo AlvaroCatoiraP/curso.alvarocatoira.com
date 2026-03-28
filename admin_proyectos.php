@@ -107,7 +107,20 @@ $proyectos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <h3 class="text-xl font-bold"><?= htmlspecialchars($proyecto['titulo']) ?></h3>
 
                         <p class="text-slate-300 mt-3 whitespace-pre-line">
-                            <?= htmlspecialchars($proyecto['descripcion']) ?>
+                        <?php
+                            $texto = htmlspecialchars($proyecto['descripcion']);
+
+                            // Reemplazar URLs por "Ver documentación"
+                            $texto = preg_replace_callback(
+                                '/(https?:\/\/[^\s]+)/',
+                                function ($matches) {
+                                    return '<a href="' . $matches[0] . '" target="_blank" class="text-sky-400 underline hover:text-sky-300 font-semibold">Ver documentación</a>';
+                                },
+                                $texto
+                            );
+
+                            echo nl2br($texto);
+                            ?>
                         </p>
 
                         <div class="mt-4 text-sm text-slate-400">

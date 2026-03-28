@@ -52,15 +52,20 @@ if ($indiceActual > 0) {
     $entregaAnteriorId = $lista[$indiceActual - 1]['id'];
 
     $sqlCheck = "
-        SELECT id
+        SELECT *
         FROM proyecto_entregas_estudiantes
         WHERE proyecto_entrega_id = ? AND estudiante_id = ?
     ";
     $stmtCheck = $pdo->prepare($sqlCheck);
     $stmtCheck->execute([$entregaAnteriorId, $usuario_id]);
+    $anterior = $stmtCheck->fetch(PDO::FETCH_ASSOC);
 
-    if (!$stmtCheck->fetch(PDO::FETCH_ASSOC)) {
+    if (!$anterior) {
         die("Debes completar la entrega anterior primero.");
+    }
+
+    if ($anterior['estado'] !== 'corregido' || (int)$anterior['liberada'] !== 1) {
+        die("La entrega anterior aún no ha sido corregida y liberada por el profesor.");
     }
 }
 
@@ -68,28 +73,59 @@ if (!empty($entrega['fecha_limite']) && strtotime($entrega['fecha_limite']) < ti
     die("La fecha límite ha pasado.");
 }
 
-if (!isset($_FILES['archivo']) || $_FILES['archivo']['error'] !== UPLOAD_ERR_OK) {
-    die("Error al subir el archivo.");
+$archivo = $_FILES['archivo'] ?? null;
+
+if (!$archivo) {
+    die("No se recibió ningún archivo.");
 }
 
-$archivo = $_FILES['archivo'];
+if ($archivo['error'] !== UPLOAD_ERR_OK) {
+    $erroresUpload = [
+        UPLOAD_ERR_INI_SIZE   => 'El archivo supera upload_max_filesize.',
+        UPLOAD_ERR_FORM_SIZE  => 'El archivo supera MAX_FILE_SIZE del formulario.',
+        UPLOAD_ERR_PARTIAL    => 'El archivo solo se subió parcialmente.',
+        UPLOAD_ERR_NO_FILE    => 'No se subió ningún archivo.',
+        UPLOAD_ERR_NO_TMP_DIR => 'Falta la carpeta temporal de PHP.',
+        UPLOAD_ERR_CANT_WRITE => 'PHP no pudo escribir el archivo temporal en disco.',
+        UPLOAD_ERR_EXTENSION  => 'Una extensión de PHP detuvo la subida.'
+    ];
+
+    $codigo = $archivo['error'];
+    $mensaje = $erroresUpload[$codigo] ?? ('Error de subida desconocido. Código: ' . $codigo);
+    die($mensaje);
+}
+
 $ext = strtolower(pathinfo($archivo['name'], PATHINFO_EXTENSION));
 
 if ($ext !== 'zip') {
     die("Solo se permiten archivos ZIP.");
 }
 
-$uploadDir = 'uploads/proyectos/';
+$uploadDirFisico = __DIR__ . '/uploads/proyectos/';
+$uploadDirWeb = 'uploads/proyectos/';
 
-if (!is_dir($uploadDir)) {
-    mkdir($uploadDir, 0777, true);
+if (!is_dir($uploadDirFisico)) {
+    if (!mkdir($uploadDirFisico, 0775, true)) {
+        die("No se pudo crear la carpeta de subida.");
+    }
+}
+
+if (!is_writable($uploadDirFisico)) {
+    die("La carpeta destino no es escribible: " . $uploadDirFisico);
+}
+
+if (!is_uploaded_file($archivo['tmp_name'])) {
+    die("PHP no reconoce el archivo como subida válida.");
 }
 
 $nombreOriginal = basename($archivo['name']);
-$nombreGuardado = uniqid('', true) . "_" . $nombreOriginal;
-$rutaCompleta = $uploadDir . $nombreGuardado;
+$nombreLimpio = preg_replace('/[^A-Za-z0-9._-]/', '_', $nombreOriginal);
+$nombreGuardado = uniqid('', true) . "_" . $nombreLimpio;
 
-if (!move_uploaded_file($archivo['tmp_name'], $rutaCompleta)) {
+$rutaFisica = $uploadDirFisico . $nombreGuardado;
+$rutaWeb = $uploadDirWeb . $nombreGuardado;
+
+if (!move_uploaded_file($archivo['tmp_name'], $rutaFisica)) {
     die("Error al guardar el archivo.");
 }
 
@@ -105,21 +141,28 @@ $existente = $stmtCheck->fetch(PDO::FETCH_ASSOC);
 if ($existente) {
     $sqlUpdate = "
         UPDATE proyecto_entregas_estudiantes
-        SET nombre_archivo_original = ?, nombre_archivo_guardado = ?, ruta_archivo = ?, entregado_en = NOW(), estado = 'entregado'
+        SET nombre_archivo_original = ?,
+            nombre_archivo_guardado = ?,
+            ruta_archivo = ?,
+            entregado_en = NOW(),
+            nota = NULL,
+            comentario = NULL,
+            estado = 'entregado',
+            liberada = 0
         WHERE id = ?
     ";
     $stmtUpdate = $pdo->prepare($sqlUpdate);
     $stmtUpdate->execute([
         $nombreOriginal,
         $nombreGuardado,
-        $rutaCompleta,
+        $rutaWeb,
         $existente['id']
     ]);
 } else {
     $sqlInsert = "
         INSERT INTO proyecto_entregas_estudiantes
-        (proyecto_entrega_id, estudiante_id, nombre_archivo_original, nombre_archivo_guardado, ruta_archivo)
-        VALUES (?, ?, ?, ?, ?)
+        (proyecto_entrega_id, estudiante_id, nombre_archivo_original, nombre_archivo_guardado, ruta_archivo, estado, liberada)
+        VALUES (?, ?, ?, ?, ?, 'entregado', 0)
     ";
     $stmtInsert = $pdo->prepare($sqlInsert);
     $stmtInsert->execute([
@@ -127,7 +170,7 @@ if ($existente) {
         $usuario_id,
         $nombreOriginal,
         $nombreGuardado,
-        $rutaCompleta
+        $rutaWeb
     ]);
 }
 

@@ -158,9 +158,9 @@ $theory = $currentChapitre['teoria_larga'] ?? '';
                 <?php foreach ($chapitres as $c): ?>
 
                     <a href="?lang=<?= $langue ?>&chap=<?= $c['code'] ?>" class="block px-4 py-3 rounded-xl
-<?= $currentChapitre && $c['code'] == $currentChapitre['code']
-            ? 'bg-sky-500/20 border border-sky-700'
-            : 'hover:bg-slate-800' ?>">
+                        <?= $currentChapitre && $c['code'] == $currentChapitre['code']
+                        ? 'bg-sky-500/20 border border-sky-700'
+                        : 'hover:bg-slate-800' ?>">
 
                         <span class="text-sky-400 font-semibold">
                             <?= $c['ordre_affichage'] ?>.

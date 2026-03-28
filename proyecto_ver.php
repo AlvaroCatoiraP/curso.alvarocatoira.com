@@ -61,14 +61,20 @@ if ($usuario_rol === 'student') {
     }
 }
 
-function entregaAnteriorEntregada(array $entregas, array $entregas_estudiante, int $indiceActual): bool
+function entregaAnteriorLiberada(array $entregas, array $entregas_estudiante, int $indiceActual): bool
 {
     if ($indiceActual === 0) {
         return true;
     }
 
     $entregaAnterior = $entregas[$indiceActual - 1];
-    return isset($entregas_estudiante[$entregaAnterior['id']]);
+    $datosAnterior = $entregas_estudiante[$entregaAnterior['id']] ?? null;
+
+    if ($datosAnterior === null) {
+        return false;
+    }
+
+    return $datosAnterior['estado'] === 'corregido' && (int)$datosAnterior['liberada'] === 1;
 }
 
 function obtenerEstadoEntrega(array $entrega, bool $desbloqueada, ?array $entregaAlumno): array
@@ -89,10 +95,18 @@ function obtenerEstadoEntrega(array $entrega, bool $desbloqueada, ?array $entreg
     }
 
     if ($entregaAlumno !== null) {
+        if ($entregaAlumno['estado'] === 'corregido' && (int)$entregaAlumno['liberada'] === 1) {
+            return [
+                'texto' => 'Corregida y liberada',
+                'clase' => 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
+                'puede_entregar' => false
+            ];
+        }
+
         if ($entregaAlumno['estado'] === 'corregido') {
             return [
                 'texto' => 'Corregida',
-                'clase' => 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
+                'clase' => 'bg-green-500/20 text-green-300 border border-green-500/30',
                 'puede_entregar' => false
             ];
         }
@@ -155,7 +169,22 @@ function obtenerEstadoEntrega(array $entrega, bool $desbloqueada, ?array $entreg
 
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-8">
             <h2 class="text-2xl font-bold">Descripción</h2>
-            <p class="text-slate-300 mt-3 whitespace-pre-line"><?= htmlspecialchars($proyecto['descripcion']) ?></p>
+                <p class="text-slate-300 mt-3 whitespace-pre-line">
+                    <?php
+                        $texto = htmlspecialchars($proyecto['descripcion']);
+
+                        // Reemplazar URLs por "Ver documentación"
+                        $texto = preg_replace_callback(
+                            '/(https?:\/\/[^\s]+)/',
+                            function ($matches) {
+                                return '<a href="' . $matches[0] . '" target="_blank" class="text-sky-400 underline hover:text-sky-300 font-semibold">Ver documentación</a>';
+                            },
+                            $texto
+                        );
+
+                        echo nl2br($texto);
+                        ?>
+                    </p>
 
             <div class="mt-4 text-sm text-slate-400 space-y-1">
                 <p>Profesor: <?= htmlspecialchars($proyecto['profesor_nombre']) ?></p>
@@ -177,7 +206,7 @@ function obtenerEstadoEntrega(array $entrega, bool $desbloqueada, ?array $entreg
                         if ($usuario_rol === 'admin') {
                             $desbloqueada = true;
                         } elseif ($usuario_rol === 'student') {
-                            $desbloqueada = entregaAnteriorEntregada($entregas, $entregas_estudiante, $indice);
+                            $desbloqueada = entregaAnteriorLiberada($entregas, $entregas_estudiante, $indice);
                         } else {
                             $desbloqueada = false;
                         }
@@ -221,6 +250,22 @@ function obtenerEstadoEntrega(array $entrega, bool $desbloqueada, ?array $entreg
                                                     <p class="text-slate-300 whitespace-pre-line">
                                                         <?= htmlspecialchars($entregaAlumno['comentario']) ?>
                                                     </p>
+                                                </div>
+                                            <?php endif; ?>
+
+                                            <?php if ($entregaAlumno['estado'] === 'corregido' && (int)$entregaAlumno['liberada'] === 0): ?>
+                                                <div class="mt-3 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-300">
+                                                    Esta fase ya fue corregida, pero todavía no ha sido liberada por el profesor.
+                                                </div>
+                                            <?php endif; ?>
+                                        <?php elseif ($usuario_rol === 'student' && $indice > 0): ?>
+                                            <?php
+                                            $entregaAnterior = $entregas[$indice - 1];
+                                            $datosAnterior = $entregas_estudiante[$entregaAnterior['id']] ?? null;
+                                            ?>
+                                            <?php if ($datosAnterior !== null && $datosAnterior['estado'] === 'corregido' && (int)$datosAnterior['liberada'] === 0): ?>
+                                                <div class="mt-3 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-300">
+                                                    Esperando validación del profesor para desbloquear esta entrega.
                                                 </div>
                                             <?php endif; ?>
                                         <?php endif; ?>

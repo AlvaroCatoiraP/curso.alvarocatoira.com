@@ -54,6 +54,13 @@ exiger_connexion();
             </a>
         </div>
 
+        <div class="mt-8 grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <a href="proyectos.php" class="bg-slate-900 border border-slate-800 p-6 rounded-2xl hover:border-sky-500 transition block">
+                <h2 class="text-xl font-bold">Mis proyectos</h2>
+                <p class="text-slate-400 mt-2">Ver enunciados y subir entregas en ZIP. (Proyectos)</p>
+            </a>
+        </div>
+
         <div class="mt-10 bg-slate-900 border border-slate-800 rounded-2xl p-6">
             <h2 class="text-2xl font-bold mb-4"><?= t('summary') ?></h2>
             <div class="grid md:grid-cols-3 gap-4">

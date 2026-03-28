@@ -152,7 +152,7 @@ try {
                 <p class="text-slate-400 mt-2">Crear deberes y revisar entregas de los alumnos.</p>
             </a>
 
-            <a href="admin_proyectos.php" class="bg-slate-900 border border-slate-800 p-6 rounded-2xl hover:border-sky-500 transition block">
+            <a href="admin_dashboard_proyectos.php" class="bg-slate-900 border border-slate-800 p-6 rounded-2xl hover:border-sky-500 transition block">
                 <h2 class="text-xl font-bold">Gestionar proyectos</h2>
                 <p class="text-slate-400 mt-2">Administrar proyectos y sus entregas.</p>
             </a>

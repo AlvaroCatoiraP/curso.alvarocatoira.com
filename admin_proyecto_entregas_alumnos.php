@@ -31,6 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $entrega_estudiante_id = isset($_POST['entrega_estudiante_id']) ? (int) $_POST['entrega_estudiante_id'] : 0;
     $nota = trim($_POST['nota'] ?? '');
     $comentario = trim($_POST['comentario'] ?? '');
+    $liberada = isset($_POST['liberada']) ? 1 : 0;
 
     if ($entrega_estudiante_id <= 0) {
         $error = "Entrega de estudiante no válida.";
@@ -58,17 +59,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $sqlUpdate = "
                     UPDATE proyecto_entregas_estudiantes
-                    SET nota = ?, comentario = ?, estado = 'corregido'
+                    SET nota = ?, comentario = ?, estado = 'corregido', liberada = ?
                     WHERE id = ?
                 ";
                 $stmtUpdate = $pdo->prepare($sqlUpdate);
                 $stmtUpdate->execute([
                     $notaFloat,
                     $comentario,
+                    $liberada,
                     $entrega_estudiante_id
                 ]);
 
-                $success = "Entrega corregida correctamente.";
+                $success = $liberada
+                    ? "Entrega corregida y fase liberada correctamente."
+                    : "Entrega corregida correctamente. La siguiente fase sigue bloqueada.";
             }
         }
     }
@@ -179,8 +183,12 @@ $entregasAlumnos = $stmtEntregasAlumnos->fetchAll(PDO::FETCH_ASSOC);
                                             <?= htmlspecialchars($fila['nombre']) ?>
                                         </h3>
 
-                                        <?php if ($fila['estado'] === 'corregido'): ?>
+                                        <?php if ($fila['estado'] === 'corregido' && (int)$fila['liberada'] === 1): ?>
                                             <span class="px-3 py-1 rounded-full text-sm font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                                Corregido y liberado
+                                            </span>
+                                        <?php elseif ($fila['estado'] === 'corregido'): ?>
+                                            <span class="px-3 py-1 rounded-full text-sm font-semibold bg-green-500/20 text-green-300 border border-green-500/30">
                                                 Corregido
                                             </span>
                                         <?php else: ?>
@@ -223,6 +231,10 @@ $entregasAlumnos = $stmtEntregasAlumnos->fetchAll(PDO::FETCH_ASSOC);
                                                     <?= htmlspecialchars($fila['comentario']) ?>
                                                 </p>
                                             <?php endif; ?>
+
+                                            <p class="text-slate-300 mt-2">
+                                                <strong>Liberada:</strong> <?= (int)$fila['liberada'] === 1 ? 'Sí' : 'No' ?>
+                                            </p>
                                         </div>
                                     <?php endif; ?>
                                 </div>
@@ -262,6 +274,20 @@ $entregasAlumnos = $stmtEntregasAlumnos->fetchAll(PDO::FETCH_ASSOC);
                                                     class="w-full p-3 rounded-xl bg-slate-800 border border-slate-700"
                                                     placeholder="Escribe observaciones, mejoras o feedback para el alumno"
                                                 ><?= htmlspecialchars($fila['comentario'] ?? '') ?></textarea>
+                                            </div>
+
+                                            <div class="flex items-center gap-3">
+                                                <input
+                                                    type="checkbox"
+                                                    id="liberada_<?= (int)$fila['id'] ?>"
+                                                    name="liberada"
+                                                    value="1"
+                                                    <?= (int)$fila['liberada'] === 1 ? 'checked' : '' ?>
+                                                    class="h-4 w-4"
+                                                >
+                                                <label for="liberada_<?= (int)$fila['id'] ?>" class="text-sm text-slate-300">
+                                                    Liberar siguiente entrega
+                                                </label>
                                             </div>
 
                                             <button
