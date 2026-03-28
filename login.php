@@ -25,10 +25,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $message = "Tu cuenta no está autorizada.";
             } else {
                 $_SESSION['user_id'] = $usuario['id'];
-                $_SESSION['user_nombre'] = $usuario['nombre'];
-                $_SESSION['user_email'] = $usuario['email'];
-                $_SESSION['user_rol'] = $usuario['rol'];
-                $_SESSION['user_estado'] = $usuario['estado'];
+                $_SESSION['nombre'] = $usuario['nombre'];
+                $_SESSION['email'] = $usuario['email'];
+                $_SESSION['rol'] = $usuario['rol'];
+                $_SESSION['estado'] = $usuario['estado'];
 
                 if ($usuario['rol'] === 'admin') {
                     header('Location: admin_dashboard.php');
