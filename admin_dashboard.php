@@ -96,6 +96,10 @@ try {
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-white min-h-screen">
+
+<?php require_once __DIR__ . '/includes/navbar.php'; ?>
+
+<div class="max-w-7xl mx-auto p-6">
     <div class="max-w-7xl mx-auto p-6 md:p-8">
         <header class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
             <div>
@@ -108,9 +112,6 @@ try {
             <div class="flex flex-wrap gap-3">
                 <a href="dashboard.php" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl font-semibold transition">
                     Panel estudiante
-                </a>
-                <a href="logout.php" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl font-semibold transition">
-                    Cerrar sesión
                 </a>
             </div>
         </header>

@@ -104,6 +104,10 @@ if (!empty($entrega['fecha_limite'])) {
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-white min-h-screen">
+
+<?php require_once __DIR__ . '/includes/navbar.php'; ?>
+
+<div class="max-w-7xl mx-auto p-6">
     <div class="max-w-5xl mx-auto p-8">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <div>
@@ -124,13 +128,6 @@ if (!empty($entrega['fecha_limite'])) {
                     class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl font-semibold"
                 >
                     Proyectos
-                </a>
-
-                <a
-                    href="logout.php"
-                    class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl font-semibold"
-                >
-                    Cerrar sesión
                 </a>
             </div>
         </div>

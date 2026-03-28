@@ -60,7 +60,46 @@ $translations = [
         'variables_text' => 'Las variables permiten guardar datos. Python detecta el tipo automáticamente.',
         'input_output_text' => 'Con input() pides datos al usuario y con print() los muestras.',
         'loops_for' => 'For',
-        'loops_while' => 'While'
+        'loops_while' => 'While',
+
+        'site_title' => 'Curso Python',
+        'login' => 'Iniciar sesión',
+        'register' => 'Registrarse',
+        'hero_badge' => 'Aprende programando',
+        'hero_title' => 'Aprende Python paso a paso con una plataforma clara y práctica',
+        'hero_desc' => 'Sigue el curso, resuelve ejercicios directamente en la web, realiza quizzes con temporizador y entrega tus proyectos en un entorno pensado para avanzar de forma progresiva.',
+        'start_now' => 'Empezar ahora',
+        'already_account' => 'Ya tengo cuenta',
+
+        'chapters_count' => 'Capítulos del curso',
+        'exercises_count' => 'Ejercicios prácticos',
+        'quizzes_count' => 'Quizzes por capítulo',
+
+        'student_dashboard' => 'Dashboard del alumno',
+        'course_progress' => 'Progreso del curso',
+        'general_progress' => 'Progreso general',
+        'exercises_label' => 'Ejercicios',
+        'quizzes_label' => 'Quizzes',
+        'average_grade' => 'Nota media',
+        'next_goal' => 'Próximo objetivo',
+        'next_goal_text' => 'Completar el capítulo 10 y enviar la siguiente entrega',
+
+        'features_badge' => 'Qué ofrece la plataforma',
+        'features_title' => 'Todo en un solo lugar',
+        'features_desc' => 'Una experiencia clara para estudiar, practicar, evaluarse y seguir el progreso.',
+        'feature_course' => 'Curso guiado',
+        'feature_course_desc' => 'Contenido organizado por capítulos para aprender de forma progresiva.',
+        'feature_exercises' => 'Ejercicios prácticos',
+        'feature_exercises_desc' => 'Resuelve ejercicios directamente desde la plataforma y guarda tu progreso.',
+        'feature_quizzes' => 'Quizzes automáticos',
+        'feature_quizzes_desc' => 'Evalúate con temporizador, corrección automática y nota final inmediata.',
+        'feature_projects' => 'Proyectos y deberes',
+        'feature_projects_desc' => 'Entrega archivos, sigue el calendario y consolida lo aprendido.',
+
+        'cta_title' => 'Empieza hoy tu progreso en Python',
+        'cta_desc' => 'Crea tu cuenta, accede al contenido del curso y empieza a practicar desde el primer día.',
+        'create_account' => 'Crear cuenta',
+        'account_status' => 'Estado'
     ],
     'fr' => [
         'dashboard' => 'Tableau de bord',
@@ -112,7 +151,46 @@ $translations = [
         'variables_text' => 'Les variables permettent de stocker des données. Python détecte automatiquement le type.',
         'input_output_text' => 'Avec input(), vous demandez des données à l’utilisateur et avec print(), vous les affichez.',
         'loops_for' => 'For',
-        'loops_while' => 'While'
+        'loops_while' => 'While',
+
+        'site_title' => 'Cours Python',
+        'login' => 'Se connecter',
+        'register' => "S'inscrire",
+        'hero_badge' => 'Apprendre en pratiquant',
+        'hero_title' => 'Apprends Python pas à pas avec une plateforme claire et pratique',
+        'hero_desc' => 'Suis le cours, résous des exercices directement en ligne, réalise des quiz avec minuteur et rends tes projets dans un environnement pensé pour progresser étape par étape.',
+        'start_now' => 'Commencer maintenant',
+        'already_account' => "J'ai déjà un compte",
+
+        'chapters_count' => 'Chapitres du cours',
+        'exercises_count' => 'Exercices pratiques',
+        'quizzes_count' => 'Quiz par chapitre',
+
+        'student_dashboard' => "Tableau de bord de l'élève",
+        'course_progress' => 'Progression du cours',
+        'general_progress' => 'Progression générale',
+        'exercises_label' => 'Exercices',
+        'quizzes_label' => 'Quiz',
+        'average_grade' => 'Note moyenne',
+        'next_goal' => 'Prochain objectif',
+        'next_goal_text' => 'Terminer le chapitre 10 et envoyer le prochain devoir',
+
+        'features_badge' => 'Ce que propose la plateforme',
+        'features_title' => 'Tout en un seul endroit',
+        'features_desc' => 'Une expérience claire pour étudier, pratiquer, se tester et suivre sa progression.',
+        'feature_course' => 'Cours guidé',
+        'feature_course_desc' => 'Contenu organisé par chapitres pour apprendre progressivement.',
+        'feature_exercises' => 'Exercices pratiques',
+        'feature_exercises_desc' => 'Résous les exercices directement depuis la plateforme et sauvegarde ta progression.',
+        'feature_quizzes' => 'Quiz automatiques',
+        'feature_quizzes_desc' => 'Évalue-toi avec minuteur, correction automatique et note immédiate.',
+        'feature_projects' => 'Projets et devoirs',
+        'feature_projects_desc' => 'Dépose tes fichiers, suis le calendrier et consolide tes acquis.',
+
+        'cta_title' => "Commence aujourd'hui ta progression en Python",
+        'cta_desc' => 'Crée ton compte, accède au contenu du cours et commence à pratiquer dès le premier jour.',
+        'create_account' => 'Créer un compte',
+        'account_status' => 'Statut'
     ]
 ];
 

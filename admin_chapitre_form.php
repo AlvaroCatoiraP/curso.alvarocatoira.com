@@ -320,6 +320,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-white min-h-screen">
+
+<?php require_once __DIR__ . '/includes/navbar.php'; ?>
+
+<div class="max-w-7xl mx-auto p-6">
     <div class="max-w-5xl mx-auto p-8">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
             <div>

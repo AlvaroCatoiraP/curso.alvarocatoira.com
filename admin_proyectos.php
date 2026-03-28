@@ -40,19 +40,15 @@ $proyectos = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-white min-h-screen">
+
+<?php require_once __DIR__ . '/includes/navbar.php'; ?>
+
+<div class="max-w-7xl mx-auto p-6">
     <div class="max-w-6xl mx-auto p-8">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <div>
                 <h1 class="text-3xl font-bold">Gestionar proyectos</h1>
                 <p class="text-slate-400 mt-2">Crea proyectos formados por varias entregas secuenciales.</p>
-            </div>
-            <div class="flex gap-3">
-                <a href="admin_dashboard.php" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl font-semibold">
-                    Admin dashboard
-                </a>
-                <a href="logout.php" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl font-semibold">
-                    Cerrar sesión
-                </a>
             </div>
         </div>
 
