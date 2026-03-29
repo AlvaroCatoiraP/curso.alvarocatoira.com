@@ -6,27 +6,30 @@ require_once __DIR__ . '/includes/db.php';
 exiger_connexion();
 
 $usuarioId = $_SESSION['user_id'] ?? $_SESSION['id'] ?? $_SESSION['usuario_id'] ?? null;
-$nombreUsuario = $_SESSION['user_nombre'] ?? 'Estudiante';
+$nombreUsuario = $_SESSION['user_nombre'] ?? t('student');
 
 if (!$usuarioId) {
-    die("Error: usuario no identificado");
+    die(t('user_not_identified'));
 }
 
 /**
  * =========================================================
- * OBTENER EJERCICIOS + PROGRESO
+ * OBTENER EJERCICIOS + PROGRESO + TRADUCCIONES
  * =========================================================
  */
 
 $stmt = $pdo->prepare("
     SELECT 
         e.codigo,
-        e.titulo,
-        e.descripcion,
+        COALESCE(et.titulo, e.titulo) AS titulo,
+        COALESCE(et.descripcion, e.descripcion) AS descripcion,
         e.capitulo,
         e.orden,
         COALESCE(p.completado, 0) AS completado
     FROM ejercicios e
+    LEFT JOIN ejercicios_traducciones et
+        ON et.ejercicio_id = e.id
+       AND et.lang = :lang
     LEFT JOIN progreso p
         ON p.ejercicio_codigo = e.codigo
        AND p.usuario_id = :usuario_id
@@ -34,7 +37,10 @@ $stmt = $pdo->prepare("
     ORDER BY e.capitulo, e.orden
 ");
 
-$stmt->execute(['usuario_id' => $usuarioId]);
+$stmt->execute([
+    'usuario_id' => $usuarioId,
+    'lang' => $lang
+]);
 $ejercicios = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 /**
@@ -64,7 +70,7 @@ $porcentaje = $total > 0 ? round(($completados / $total) * 100) : 0;
 $grupos = [];
 
 foreach ($ejercicios as $e) {
-    $cap = "Capítulo " . $e['capitulo'];
+    $cap = t('chapter') . ' ' . $e['capitulo'];
 
     if (!isset($grupos[$cap])) {
         $grupos[$cap] = [];
@@ -78,7 +84,7 @@ foreach ($ejercicios as $e) {
 <html lang="<?= htmlspecialchars($lang) ?>">
 <head>
     <meta charset="UTF-8">
-    <title>Ejercicios</title>
+    <title><?= t('practices') ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -93,19 +99,15 @@ foreach ($ejercicios as $e) {
     <!-- HEADER -->
     <div class="flex justify-between items-center">
         <div>
-            <h1 class="text-3xl font-bold">Ejercicios</h1>
-            <p class="text-slate-400">Hola <?= htmlspecialchars($nombreUsuario) ?></p>
+            <h1 class="text-3xl font-bold"><?= t('practices') ?></h1>
+            <p class="text-slate-400"><?= t('hello_user') ?> <?= htmlspecialchars($nombreUsuario) ?></p>
         </div>
-
-        <a href="dashboard.php" class="bg-slate-800 px-4 py-2 rounded-xl hover:bg-slate-700">
-            ← Dashboard
-        </a>
     </div>
 
     <!-- PROGRESO -->
     <div class="mt-8 bg-slate-900 p-6 rounded-2xl border border-slate-800">
         <div class="flex justify-between text-sm mb-2">
-            <span>Progreso</span>
+            <span><?= t('progress') ?></span>
             <span><?= $porcentaje ?>%</span>
         </div>
 
@@ -116,17 +118,17 @@ foreach ($ejercicios as $e) {
         <div class="grid grid-cols-3 gap-4 mt-4 text-center">
             <div>
                 <p class="text-xl font-bold"><?= $total ?></p>
-                <p class="text-slate-400 text-sm">Total</p>
+                <p class="text-slate-400 text-sm"><?= t('total') ?></p>
             </div>
 
             <div>
                 <p class="text-xl font-bold text-green-400"><?= $completados ?></p>
-                <p class="text-slate-400 text-sm">Completados</p>
+                <p class="text-slate-400 text-sm"><?= t('completed') ?></p>
             </div>
 
             <div>
                 <p class="text-xl font-bold text-yellow-400"><?= $pendientes ?></p>
-                <p class="text-slate-400 text-sm">Pendientes</p>
+                <p class="text-slate-400 text-sm"><?= t('pending') ?></p>
             </div>
         </div>
     </div>
@@ -137,7 +139,7 @@ foreach ($ejercicios as $e) {
         <?php foreach ($grupos as $capitulo => $items): ?>
 
             <div>
-                <h2 class="text-2xl font-bold mb-4"><?= $capitulo ?></h2>
+                <h2 class="text-2xl font-bold mb-4"><?= htmlspecialchars($capitulo) ?></h2>
 
                 <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
 
@@ -147,7 +149,7 @@ foreach ($ejercicios as $e) {
 
                             <!-- ESTADO -->
                             <div class="flex justify-between items-start">
-                                <span class="text-xs text-sky-300"><?= $e['codigo'] ?></span>
+                                <span class="text-xs text-sky-300"><?= htmlspecialchars($e['codigo']) ?></span>
 
                                 <?php if ($e['completado']): ?>
                                     <span class="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded">
@@ -155,7 +157,7 @@ foreach ($ejercicios as $e) {
                                     </span>
                                 <?php else: ?>
                                     <span class="text-xs bg-slate-700 px-2 py-1 rounded">
-                                        pendiente
+                                        <?= t('pending_lower') ?>
                                     </span>
                                 <?php endif; ?>
                             </div>
@@ -174,7 +176,7 @@ foreach ($ejercicios as $e) {
                             <div class="mt-4 text-right">
                                 <a href="ejercicio.php?codigo=<?= urlencode($e['codigo']) ?>"
                                    class="bg-sky-500 px-4 py-2 rounded-xl hover:bg-sky-600 text-sm">
-                                    Abrir
+                                    <?= t('open') ?>
                                 </a>
                             </div>
 

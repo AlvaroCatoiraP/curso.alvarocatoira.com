@@ -1,5 +1,6 @@
 <?php
 require_once 'includes/auth.php';
+require_once 'includes/lang.php';
 require_once 'includes/db.php';
 
 exiger_admin();
@@ -7,7 +8,7 @@ exiger_admin();
 $proyecto_id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 
 if ($proyecto_id <= 0) {
-    die("Proyecto no válido.");
+    die(t('invalid_project'));
 }
 
 /* =========================
@@ -24,7 +25,7 @@ $stmtProyecto->execute([$proyecto_id]);
 $proyecto = $stmtProyecto->fetch(PDO::FETCH_ASSOC);
 
 if (!$proyecto) {
-    die("Proyecto no encontrado.");
+    die(t('project_not_found'));
 }
 
 $error = '';
@@ -38,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $descripcion = trim($_POST['descripcion'] ?? '');
 
     if ($titulo === '' || $descripcion === '') {
-        $error = "El título y la descripción son obligatorios.";
+        $error = t('project_required_fields');
     } else {
         $sqlUpdate = "
             UPDATE proyectos
@@ -52,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $proyecto_id
         ]);
 
-        $success = "Proyecto actualizado correctamente.";
+        $success = t('project_updated_successfully');
 
         $stmtProyecto->execute([$proyecto_id]);
         $proyecto = $stmtProyecto->fetch(PDO::FETCH_ASSOC);
@@ -60,11 +61,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="<?= htmlspecialchars($lang) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editar proyecto</title>
+    <title><?= t('edit_project') ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-white min-h-screen">
@@ -75,8 +76,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="max-w-5xl mx-auto p-8">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <div>
-                <h1 class="text-3xl font-bold">Editar proyecto</h1>
-                <p class="text-slate-400 mt-2">Modifica el título y la descripción del proyecto.</p>
+                <h1 class="text-3xl font-bold"><?= t('edit_project') ?></h1>
+                <p class="text-slate-400 mt-2"><?= t('edit_project_desc') ?></p>
             </div>
 
             <div class="flex gap-3 flex-wrap">
@@ -84,14 +85,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     href="admin_dashboard_proyectos.php"
                     class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl font-semibold"
                 >
-                    Dashboard proyectos
+                    <?= t('projects_dashboard') ?>
                 </a>
 
                 <a
                     href="admin_proyectos.php"
                     class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl font-semibold"
                 >
-                    Volver a proyectos
+                    <?= t('back_to_projects') ?>
                 </a>
             </div>
         </div>
@@ -100,9 +101,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h2 class="text-2xl font-bold"><?= htmlspecialchars($proyecto['titulo']) ?></h2>
 
             <div class="mt-4 text-sm text-slate-400 space-y-1">
-                <p><strong>ID proyecto:</strong> <?= (int)$proyecto['id'] ?></p>
-                <p><strong>Profesor:</strong> <?= htmlspecialchars($proyecto['profesor_nombre']) ?></p>
-                <p><strong>Creado:</strong> <?= htmlspecialchars($proyecto['creado_en']) ?></p>
+                <p><strong><?= t('project_id') ?>:</strong> <?= (int)$proyecto['id'] ?></p>
+                <p><strong><?= t('teacher') ?>:</strong> <?= htmlspecialchars($proyecto['profesor_nombre']) ?></p>
+                <p><strong><?= t('created') ?>:</strong> <?= htmlspecialchars($proyecto['creado_en']) ?></p>
             </div>
         </div>
 
@@ -119,11 +120,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-            <h2 class="text-2xl font-bold mb-6">Modificar datos del proyecto</h2>
+            <h2 class="text-2xl font-bold mb-6"><?= t('modify_project_data') ?></h2>
 
             <form method="POST" class="space-y-5">
                 <div>
-                    <label class="block mb-2 font-semibold">Título del proyecto</label>
+                    <label class="block mb-2 font-semibold"><?= t('project_title') ?></label>
                     <input
                         type="text"
                         name="titulo"
@@ -134,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <div>
-                    <label class="block mb-2 font-semibold">Descripción</label>
+                    <label class="block mb-2 font-semibold"><?= t('description') ?></label>
                     <textarea
                         name="descripcion"
                         rows="12"
@@ -148,14 +149,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         type="submit"
                         class="bg-amber-500 hover:bg-amber-600 px-5 py-3 rounded-xl font-semibold"
                     >
-                        Guardar cambios
+                        <?= t('save_changes') ?>
                     </button>
 
                     <a
                         href="admin_dashboard_proyectos.php"
                         class="bg-slate-700 hover:bg-slate-600 px-5 py-3 rounded-xl font-semibold"
                     >
-                        Cancelar
+                        <?= t('cancel') ?>
                     </a>
                 </div>
             </form>

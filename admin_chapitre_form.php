@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/lang.php';
 require_once __DIR__ . '/includes/db.php';
 
 exiger_admin();
@@ -176,7 +177,7 @@ if ($editMode) {
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$row) {
-        die('Capítulo no encontrado.');
+        die(t('chapter_not_found'));
     }
 
     $chapter = $row;
@@ -205,7 +206,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $frQuiz = normalizeText(postString('fr_mini_quiz'));
 
         if ($code === '') {
-            throw new Exception('El código es obligatorio.');
+            throw new Exception(t('chapter_code_required'));
         }
 
         $pdo->beginTransaction();
@@ -215,7 +216,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$code, $idPost]);
 
             if ((int)$stmt->fetchColumn() > 0) {
-                throw new Exception('Otro capítulo ya usa ese código.');
+                throw new Exception(t('chapter_code_used_by_other'));
             }
 
             $sets = ['code = ?', 'ordre_affichage = ?', 'visible = ?'];
@@ -243,7 +244,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$code]);
 
             if ((int)$stmt->fetchColumn() > 0) {
-                throw new Exception('Ese código ya existe.');
+                throw new Exception(t('chapter_code_exists'));
             }
 
             $fields = ['code', 'ordre_affichage', 'visible'];
@@ -312,11 +313,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 [$frEj1, $frEj2] = splitTwoLines($frContent['ejercicios_guiados'] ?? '');
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="<?= htmlspecialchars($lang) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $editMode ? 'Editar capítulo' : 'Crear capítulo' ?></title>
+    <title><?= $editMode ? t('edit_chapter') : t('create_chapter') ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-white min-h-screen">
@@ -327,16 +328,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="max-w-5xl mx-auto p-8">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
             <div>
-                <h1 class="text-3xl font-bold"><?= $editMode ? 'Editar capítulo' : 'Crear capítulo' ?></h1>
-                <p class="text-slate-400 mt-2">Formulario de capítulo bilingüe.</p>
+                <h1 class="text-3xl font-bold"><?= $editMode ? t('edit_chapter') : t('create_chapter') ?></h1>
+                <p class="text-slate-400 mt-2"><?= t('bilingual_chapter_form') ?></p>
             </div>
 
             <div class="flex flex-wrap gap-3">
                 <a href="admin_chapitres.php" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl font-semibold">
-                    Volver a la lista
+                    <?= t('back_to_list') ?>
                 </a>
                 <a href="admin_dashboard.php" class="bg-sky-500 hover:bg-sky-600 px-4 py-2 rounded-xl font-semibold">
-                    Dashboard admin
+                    <?= t('admin_dashboard') ?>
                 </a>
             </div>
         </div>
@@ -352,78 +353,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <div class="grid md:grid-cols-3 gap-4">
                 <div>
-                    <label class="block text-sm font-semibold text-slate-300 mb-2">Código</label>
+                    <label class="block text-sm font-semibold text-slate-300 mb-2"><?= t('code') ?></label>
                     <input type="text" name="code" value="<?= h($chapter['code'] ?? '') ?>" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3" required>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-slate-300 mb-2">Orden</label>
+                    <label class="block text-sm font-semibold text-slate-300 mb-2"><?= t('order') ?></label>
                     <input type="number" min="1" name="ordre_affichage" value="<?= (int)($chapter['ordre_affichage'] ?? 1) ?>" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3" required>
                 </div>
 
                 <div class="flex items-end">
                     <label class="inline-flex items-center gap-3 w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3">
                         <input type="checkbox" name="visible" value="1" <?= (int)($chapter['visible'] ?? 0) === 1 ? 'checked' : '' ?>>
-                        <span class="font-semibold">Visible</span>
+                        <span class="font-semibold"><?= t('visible') ?></span>
                     </label>
                 </div>
             </div>
 
             <div class="grid xl:grid-cols-2 gap-6">
                 <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-4">
-                    <h2 class="text-xl font-bold text-sky-300">Contenido ES</h2>
+                    <h2 class="text-xl font-bold text-sky-300"><?= t('content_es') ?></h2>
 
                     <div>
-                        <label class="block text-sm font-semibold text-slate-300 mb-2">Título</label>
+                        <label class="block text-sm font-semibold text-slate-300 mb-2"><?= t('title') ?></label>
                         <input type="text" name="es_titulo" value="<?= h($chapter['titre_es'] ?? $esContent['titulo'] ?? '') ?>" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3">
                     </div>
 
                     <div>
-                        <label class="block text-sm font-semibold text-slate-300 mb-2">Teoría</label>
+                        <label class="block text-sm font-semibold text-slate-300 mb-2"><?= t('theory') ?></label>
                         <textarea name="es_teoria" rows="6" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3"><?= h($esContent['teoria_larga'] ?? '') ?></textarea>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-semibold text-slate-300 mb-2">Ejercicio 1</label>
+                        <label class="block text-sm font-semibold text-slate-300 mb-2"><?= t('exercise_1') ?></label>
                         <textarea name="es_ejercicio_1" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3"><?= h($esEj1) ?></textarea>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-semibold text-slate-300 mb-2">Ejercicio 2</label>
+                        <label class="block text-sm font-semibold text-slate-300 mb-2"><?= t('exercise_2') ?></label>
                         <textarea name="es_ejercicio_2" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3"><?= h($esEj2) ?></textarea>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-semibold text-slate-300 mb-2">Mini quiz</label>
+                        <label class="block text-sm font-semibold text-slate-300 mb-2"><?= t('mini_quiz') ?></label>
                         <textarea name="es_mini_quiz" rows="4" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3"><?= h($esContent['mini_quiz'] ?? '') ?></textarea>
                     </div>
                 </div>
 
                 <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-4">
-                    <h2 class="text-xl font-bold text-violet-300">Contenu FR</h2>
+                    <h2 class="text-xl font-bold text-violet-300"><?= t('content_fr') ?></h2>
 
                     <div>
-                        <label class="block text-sm font-semibold text-slate-300 mb-2">Titre</label>
+                        <label class="block text-sm font-semibold text-slate-300 mb-2"><?= t('title_fr_label') ?></label>
                         <input type="text" name="fr_titulo" value="<?= h($chapter['titre_fr'] ?? $frContent['titulo'] ?? '') ?>" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3">
                     </div>
 
                     <div>
-                        <label class="block text-sm font-semibold text-slate-300 mb-2">Théorie</label>
+                        <label class="block text-sm font-semibold text-slate-300 mb-2"><?= t('theory_fr') ?></label>
                         <textarea name="fr_teoria" rows="6" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3"><?= h($frContent['teoria_larga'] ?? '') ?></textarea>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-semibold text-slate-300 mb-2">Exercice 1</label>
+                        <label class="block text-sm font-semibold text-slate-300 mb-2"><?= t('exercise_1_fr') ?></label>
                         <textarea name="fr_ejercicio_1" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3"><?= h($frEj1) ?></textarea>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-semibold text-slate-300 mb-2">Exercice 2</label>
+                        <label class="block text-sm font-semibold text-slate-300 mb-2"><?= t('exercise_2_fr') ?></label>
                         <textarea name="fr_ejercicio_2" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3"><?= h($frEj2) ?></textarea>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-semibold text-slate-300 mb-2">Mini quiz</label>
+                        <label class="block text-sm font-semibold text-slate-300 mb-2"><?= t('mini_quiz') ?></label>
                         <textarea name="fr_mini_quiz" rows="4" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3"><?= h($frContent['mini_quiz'] ?? '') ?></textarea>
                     </div>
                 </div>
@@ -431,14 +432,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <div class="flex flex-wrap gap-3">
                 <button type="submit" class="bg-sky-500 hover:bg-sky-600 px-5 py-3 rounded-xl font-semibold">
-                    <?= $editMode ? 'Guardar cambios' : 'Crear capítulo' ?>
+                    <?= $editMode ? t('save_changes') : t('create_chapter') ?>
                 </button>
 
                 <a href="admin_chapitres.php" class="bg-slate-800 hover:bg-slate-700 px-5 py-3 rounded-xl font-semibold">
-                    Cancelar
+                    <?= t('cancel') ?>
                 </a>
             </div>
         </form>
     </div>
+</div>
 </body>
 </html>

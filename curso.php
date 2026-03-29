@@ -197,12 +197,12 @@ $theory = $currentChapitre['teoria_larga'] ?? '';
                         class="px-3 py-1 rounded-lg <?= $langue==='es'?'bg-sky-500':'bg-slate-700' ?>">
                             ES
                         </a>
-                        <!--
+                        
                         <a href="?lang=fr<?= $currentChapitre ? '&chap='.$currentChapitre['code'] : '' ?>"
                         class="px-3 py-1 rounded-lg <?= $langue==='fr'?'bg-sky-500':'bg-slate-700' ?>">
                             FR
                         </a>
-                        -->
+                        
                         <?php if ($isAdmin && !empty($currentChapitre) && isset($currentChapitre['id'])): ?>
                             <a
                                 href="admin_chapitre_form.php?id=<?= (int)$currentChapitre['id'] ?>"

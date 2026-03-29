@@ -9,7 +9,11 @@ $nombreUsuario = $_SESSION['user_nombre'] ?? 'Estudiante';
 $usuarioId = $_SESSION['user_id'] ?? $_SESSION['id'] ?? $_SESSION['usuario_id'] ?? null;
 
 if (!$usuarioId) {
-    die('No se encontró el ID del usuario en la sesión.');
+    die(t('user_id_not_found'));
+}
+
+if($_SESSION["rol"] == "admin"){
+    header("Location: admin_dashboard.php");
 }
 
 $totalEjercicios = 0;
@@ -21,18 +25,16 @@ $entregasRealizadas = 0;
 $entregasPendientes = 0;
 
 $notaMedia = null;
-$notaMediaTexto = 'Sin nota';
+$notaMediaTexto = t('no_grade');
 
 $ultimaActividad = null;
-$ultimaActividadTexto = 'Sin actividad registrada';
+$ultimaActividadTexto = t('no_activity_recorded');
 
 try {
     /**
      * =========================================================
      * 1) PROGRESO DEL CURSO
      * =========================================================
-     * Como me confirmaste, la tabla progreso representa
-     * los ejercicios completados.
      */
 
     $stmt = $pdo->query("
@@ -166,7 +168,7 @@ try {
     }
 
 } catch (PDOException $e) {
-    die("Error al cargar el dashboard: " . $e->getMessage());
+    die(t('dashboard_load_error') . ': ' . $e->getMessage());
 }
 
 /**
@@ -176,13 +178,13 @@ try {
  */
 
 if ($porcentajeCurso >= 100) {
-    $mensajeProgreso = '¡Curso completado! Ahora toca consolidar todo con el proyecto final.';
+    $mensajeProgreso = t('progress_message_100');
 } elseif ($porcentajeCurso >= 75) {
-    $mensajeProgreso = 'Muy buen avance. Ya estás en la recta final del curso.';
+    $mensajeProgreso = t('progress_message_75');
 } elseif ($porcentajeCurso >= 50) {
-    $mensajeProgreso = 'Buen progreso. Sigue así para llegar al proyecto con confianza.';
+    $mensajeProgreso = t('progress_message_50');
 } else {
-    $mensajeProgreso = 'Buen comienzo. Sigue avanzando poco a poco.';
+    $mensajeProgreso = t('progress_message_start');
 }
 ?>
 <!DOCTYPE html>
@@ -208,13 +210,6 @@ if ($porcentajeCurso >= 100) {
                 </h1>
                 <p class="text-slate-400 mt-2"><?= t('personal_space') ?></p>
             </div>
-
-            <div class="flex flex-wrap gap-3 items-center">
-
-                <a href="logout.php" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl font-semibold transition">
-                    <?= t('logout') ?>
-                </a>
-            </div>
         </div>
 
         <!-- HERO / PROGRESO -->
@@ -222,11 +217,11 @@ if ($porcentajeCurso >= 100) {
             <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-8">
                 <div class="max-w-3xl">
                     <p class="text-sky-300 text-sm font-semibold uppercase tracking-wide">
-                        Dashboard de progreso
+                        <?= t('progress_dashboard') ?>
                     </p>
 
                     <h2 class="text-2xl md:text-3xl font-bold mt-2">
-                        Tu avance en Python básico
+                        <?= t('python_basic_progress') ?>
                     </h2>
 
                     <p class="text-slate-300 mt-3">
@@ -235,7 +230,7 @@ if ($porcentajeCurso >= 100) {
 
                     <div class="mt-5">
                         <div class="flex justify-between text-sm text-slate-300 mb-2">
-                            <span>Progreso del curso</span>
+                            <span><?= t('course_progress') ?></span>
                             <span><?= $porcentajeCurso ?>%</span>
                         </div>
 
@@ -247,22 +242,21 @@ if ($porcentajeCurso >= 100) {
                         </div>
 
                         <p class="text-sm text-slate-400 mt-2">
-                            <?= $ejerciciosCompletados ?> de <?= $totalEjercicios ?> ejercicios completados
+                            <?= sprintf(t('completed_exercises_count'), $ejerciciosCompletados, $totalEjercicios) ?>
                         </p>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4 min-w-[280px]">
                     <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4">
-                        <p class="text-slate-400 text-sm">Curso completado</p>
+                        <p class="text-slate-400 text-sm"><?= t('course_completed') ?></p>
                         <p class="text-2xl font-bold mt-2"><?= $porcentajeCurso ?>%</p>
                     </div>
 
                     <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4">
-                        <p class="text-slate-400 text-sm">Entregas hechas (proyecto)</p>
+                        <p class="text-slate-400 text-sm"><?= t('project_submissions_done') ?></p>
                         <p class="text-2xl font-bold mt-2"><?= $entregasRealizadas ?>/<?= $totalEntregasProyecto ?></p>
                     </div>
-
                 </div>
             </div>
         </div>
@@ -270,33 +264,33 @@ if ($porcentajeCurso >= 100) {
         <!-- TARJETAS DE ESTADÍSTICAS -->
         <div class="mt-8 grid md:grid-cols-2 xl:grid-cols-4 gap-6">
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-                <p class="text-slate-400 text-sm">Ejercicios completados</p>
+                <p class="text-slate-400 text-sm"><?= t('completed_exercises') ?></p>
                 <p class="text-3xl font-bold mt-2"><?= $ejerciciosCompletados ?></p>
-                <p class="text-slate-500 text-sm mt-2">De un total de <?= $totalEjercicios ?></p>
+                <p class="text-slate-500 text-sm mt-2"><?= sprintf(t('out_of_total'), $totalEjercicios) ?></p>
             </div>
 
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-                <p class="text-slate-400 text-sm">Entregas pendientes (proyecto)</p>
+                <p class="text-slate-400 text-sm"><?= t('pending_submissions_project') ?></p>
                 <p class="text-3xl font-bold mt-2"><?= $entregasPendientes ?></p>
-                <p class="text-slate-500 text-sm mt-2">Pendientes por enviar o completar</p>
+                <p class="text-slate-500 text-sm mt-2"><?= t('pending_to_send_or_complete') ?></p>
             </div>
 
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-                <p class="text-slate-400 text-sm">Estado</p>
-                <p class="text-3xl font-bold mt-2">Activo</p>
-                <p class="text-slate-500 text-sm mt-2">Cuenta habilitada para continuar</p>
+                <p class="text-slate-400 text-sm"><?= t('status') ?></p>
+                <p class="text-3xl font-bold mt-2"><?= t('active') ?></p>
+                <p class="text-slate-500 text-sm mt-2"><?= t('account_enabled_to_continue') ?></p>
             </div>
 
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-                <p class="text-slate-400 text-sm">Curso actual</p>
-                <p class="text-xl font-bold mt-2">Python básico</p>
-                <p class="text-slate-500 text-sm mt-2">Fundamentos + proyecto final</p>
+                <p class="text-slate-400 text-sm"><?= t('current_course') ?></p>
+                <p class="text-xl font-bold mt-2"><?= t('python_basic') ?></p>
+                <p class="text-slate-500 text-sm mt-2"><?= t('course_foundations_final_project') ?></p>
             </div>
         </div>
 
         <!-- ACCESOS RÁPIDOS -->
         <div class="mt-8">
-            <h2 class="text-2xl font-bold mb-4">Accesos rápidos</h2>
+            <h2 class="text-2xl font-bold mb-4"><?= t('quick_access') ?></h2>
 
             <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-6">
                 <a href="curso.php" class="bg-slate-900 border border-slate-800 p-6 rounded-2xl hover:border-sky-500 hover:-translate-y-1 transition block">
@@ -310,17 +304,18 @@ if ($porcentajeCurso >= 100) {
                 </a>
 
                 <a href="deberes.php" class="bg-slate-900 border border-slate-800 p-6 rounded-2xl hover:border-sky-500 hover:-translate-y-1 transition block">
-                    <h3 class="text-xl font-bold">Mis deberes</h3>
-                    <p class="text-slate-400 mt-2">Ver enunciados y subir entregas en ZIP.</p>
+                    <h3 class="text-xl font-bold"><?= t('my_homework') ?></h3>
+                    <p class="text-slate-400 mt-2"><?= t('my_homework_desc') ?></p>
                 </a>
 
                 <a href="proyectos.php" class="bg-slate-900 border border-slate-800 p-6 rounded-2xl hover:border-sky-500 hover:-translate-y-1 transition block">
-                    <h3 class="text-xl font-bold">Mis proyectos</h3>
-                    <p class="text-slate-400 mt-2">Ver las entregas del proyecto y subir archivos.</p>
+                    <h3 class="text-xl font-bold"><?= t('my_projects') ?></h3>
+                    <p class="text-slate-400 mt-2"><?= t('my_projects_desc') ?></p>
                 </a>
+
                 <a href="quizzes.php" class="bg-slate-900 border border-slate-800 p-6 rounded-2xl hover:border-sky-500 hover:-translate-y-1 transition block">
-                    <h3 class="text-xl font-bold">Quizzes</h3>
-                    <p class="text-slate-400 mt-2">Realiza quizzes por capítulo con temporizador y nota automática.</p>
+                    <h3 class="text-xl font-bold"><?= t('quizzes') ?></h3>
+                    <p class="text-slate-400 mt-2"><?= t('quizzes_desc') ?></p>
                 </a>
             </div>
         </div>
@@ -346,8 +341,8 @@ if ($porcentajeCurso >= 100) {
                 </div>
 
                 <div class="bg-slate-800 rounded-xl p-4">
-                    <p class="text-slate-400 text-sm">Pendientes</p>
-                    <p class="text-lg font-semibold mt-2"><?= $entregasPendientes ?> entregas</p>
+                    <p class="text-slate-400 text-sm"><?= t('pending') ?></p>
+                    <p class="text-lg font-semibold mt-2"><?= sprintf(t('pending_submissions_count'), $entregasPendientes) ?></p>
                 </div>
             </div>
         </div>

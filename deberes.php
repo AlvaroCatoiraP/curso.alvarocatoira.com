@@ -1,5 +1,6 @@
 <?php
 require_once 'includes/auth.php';
+require_once 'includes/lang.php';
 require_once 'includes/db.php';
 
 exiger_connexion();
@@ -12,9 +13,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $deber_id = (int)($_POST['deber_id'] ?? 0);
 
     if ($deber_id <= 0) {
-        $message = "Deber no válido.";
+        $message = t('invalid_homework');
     } elseif (!isset($_FILES['archivo_zip']) || $_FILES['archivo_zip']['error'] !== UPLOAD_ERR_OK) {
-        $message = "Debes subir un archivo ZIP válido.";
+        $message = t('upload_valid_zip');
     } else {
         $archivo = $_FILES['archivo_zip'];
         $nombre_original = $archivo['name'];
@@ -24,9 +25,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $extension = strtolower(pathinfo($nombre_original, PATHINFO_EXTENSION));
 
         if ($extension !== 'zip') {
-            $message = "Solo se permiten archivos .zip";
+            $message = t('only_zip_allowed');
         } elseif ($tamano > 20 * 1024 * 1024) {
-            $message = "El archivo es demasiado grande. Máximo 20 MB.";
+            $message = t('file_too_large');
         } else {
             $nombre_guardado = uniqid('deber_', true) . '.zip';
             $ruta_relativa = 'uploads/deberes/' . $nombre_guardado;
@@ -46,9 +47,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([$deber_id, $usuario_id, $nombre_original, $nombre_guardado, $ruta_relativa]);
 
-                $success = "Archivo enviado correctamente.";
+                $success = t('file_sent_success');
             } else {
-                $message = "Error al guardar el archivo.";
+                $message = t('file_save_error');
             }
         }
     }
@@ -69,11 +70,11 @@ $stmt->execute([$usuario_id]);
 $deberes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="<?= htmlspecialchars($lang) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mis deberes</title>
+    <title><?= t('my_homework') ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-white min-h-screen">
@@ -84,8 +85,8 @@ $deberes = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="max-w-6xl mx-auto p-8">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <div>
-                <h1 class="text-3xl font-bold">Mis deberes</h1>
-                <p class="text-slate-400 mt-2">Consulta los enunciados y entrega tus archivos ZIP.</p>
+                <h1 class="text-3xl font-bold"><?= t('my_homework') ?></h1>
+                <p class="text-slate-400 mt-2"><?= t('my_homework_desc') ?></p>
             </div>
         </div>
 
@@ -109,14 +110,14 @@ $deberes = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <p class="text-slate-300 mt-4 whitespace-pre-line"><?= htmlspecialchars($deber['enunciado']) ?></p>
 
                     <div class="mt-4 text-sm text-slate-400">
-                        <p>Creado: <?= htmlspecialchars($deber['creado_en']) ?></p>
-                        <p>Fecha límite: <?= $deber['fecha_limite'] ? htmlspecialchars($deber['fecha_limite']) : 'Sin fecha límite' ?></p>
+                        <p><?= t('created') ?>: <?= htmlspecialchars($deber['creado_en']) ?></p>
+                        <p><?= t('deadline') ?>: <?= $deber['fecha_limite'] ? htmlspecialchars($deber['fecha_limite']) : t('no_deadline') ?></p>
                     </div>
 
                     <div class="mt-5">
                         <?php if ($deber['entrega_id']): ?>
                             <div class="mb-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 px-4 py-3 rounded-xl">
-                                Entregado: <?= htmlspecialchars($deber['nombre_archivo_original']) ?> — <?= htmlspecialchars($deber['entregado_en']) ?>
+                                <?= t('submitted') ?>: <?= htmlspecialchars($deber['nombre_archivo_original']) ?> — <?= htmlspecialchars($deber['entregado_en']) ?>
                             </div>
                         <?php endif; ?>
 
@@ -127,7 +128,7 @@ $deberes = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                    class="block w-full text-sm text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-slate-700 file:text-white hover:file:bg-slate-600">
 
                             <button class="bg-sky-500 hover:bg-sky-600 px-5 py-3 rounded-xl font-semibold">
-                                <?= $deber['entrega_id'] ? 'Reenviar ZIP' : 'Enviar ZIP' ?>
+                                <?= $deber['entrega_id'] ? t('resend_zip') : t('send_zip') ?>
                             </button>
                         </form>
                     </div>
@@ -136,7 +137,7 @@ $deberes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             <?php if (count($deberes) === 0): ?>
                 <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-                    <p class="text-slate-400">No hay deberes disponibles.</p>
+                    <p class="text-slate-400"><?= t('no_homework_available') ?></p>
                 </div>
             <?php endif; ?>
         </div>

@@ -1,5 +1,6 @@
 <?php
 require_once 'includes/auth.php';
+require_once 'includes/lang.php';
 require_once 'includes/db.php';
 
 exiger_admin();
@@ -7,7 +8,7 @@ exiger_admin();
 $entrega_id = isset($_GET['entrega_id']) ? (int) $_GET['entrega_id'] : 0;
 
 if ($entrega_id <= 0) {
-    die("Entrega no válida.");
+    die(t('invalid_delivery'));
 }
 
 $sqlEntrega = "
@@ -21,7 +22,7 @@ $stmtEntrega->execute([$entrega_id]);
 $entrega = $stmtEntrega->fetch(PDO::FETCH_ASSOC);
 
 if (!$entrega) {
-    die("Entrega no encontrada.");
+    die(t('delivery_not_found'));
 }
 
 $error = '';
@@ -34,16 +35,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $liberada = isset($_POST['liberada']) ? 1 : 0;
 
     if ($entrega_estudiante_id <= 0) {
-        $error = "Entrega de estudiante no válida.";
+        $error = t('invalid_student_submission');
     } elseif ($nota === '') {
-        $error = "La nota es obligatoria.";
+        $error = t('grade_required');
     } elseif (!is_numeric($nota)) {
-        $error = "La nota debe ser numérica.";
+        $error = t('grade_must_be_numeric');
     } else {
         $notaFloat = (float)$nota;
 
         if ($notaFloat < 0 || $notaFloat > 10) {
-            $error = "La nota debe estar entre 0 y 10.";
+            $error = t('grade_range_0_10');
         } else {
             $sqlVerificar = "
                 SELECT id
@@ -55,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $filaVerificada = $stmtVerificar->fetch(PDO::FETCH_ASSOC);
 
             if (!$filaVerificada) {
-                $error = "La entrega del estudiante no existe para esta fase.";
+                $error = t('student_submission_not_exists_for_phase');
             } else {
                 $sqlUpdate = "
                     UPDATE proyecto_entregas_estudiantes
@@ -71,8 +72,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]);
 
                 $success = $liberada
-                    ? "Entrega corregida y fase liberada correctamente."
-                    : "Entrega corregida correctamente. La siguiente fase sigue bloqueada.";
+                    ? t('submission_corrected_released_success')
+                    : t('submission_corrected_next_locked');
             }
         }
     }
@@ -94,11 +95,11 @@ $stmtEntregasAlumnos->execute([$entrega_id]);
 $entregasAlumnos = $stmtEntregasAlumnos->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="<?= htmlspecialchars($lang) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Entregas de alumnos</title>
+    <title><?= t('student_deliveries') ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-white min-h-screen">
@@ -109,8 +110,8 @@ $entregasAlumnos = $stmtEntregasAlumnos->fetchAll(PDO::FETCH_ASSOC);
     <div class="max-w-7xl mx-auto p-8">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <div>
-                <h1 class="text-3xl font-bold">Entregas de alumnos</h1>
-                <p class="text-slate-400 mt-2">Corrige las entregas de esta fase del proyecto.</p>
+                <h1 class="text-3xl font-bold"><?= t('student_deliveries') ?></h1>
+                <p class="text-slate-400 mt-2"><?= t('student_deliveries_desc') ?></p>
             </div>
 
             <div class="flex gap-3 flex-wrap">
@@ -118,16 +119,15 @@ $entregasAlumnos = $stmtEntregasAlumnos->fetchAll(PDO::FETCH_ASSOC);
                     href="admin_proyecto_entregas.php?proyecto_id=<?= (int)$entrega['proyecto_id'] ?>"
                     class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl font-semibold"
                 >
-                    Volver a entregas
+                    <?= t('back_to_deliveries') ?>
                 </a>
 
                 <a
                     href="admin_proyectos.php"
                     class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl font-semibold"
                 >
-                    Proyectos
+                    <?= t('projects') ?>
                 </a>
-
             </div>
         </div>
 
@@ -138,7 +138,7 @@ $entregasAlumnos = $stmtEntregasAlumnos->fetchAll(PDO::FETCH_ASSOC);
 
             <div class="mt-4 space-y-2 text-slate-300">
                 <p>
-                    <strong>Fase:</strong>
+                    <strong><?= t('phase') ?>:</strong>
                     <?= (int)$entrega['orden_entrega'] ?> - <?= htmlspecialchars($entrega['titulo']) ?>
                 </p>
 
@@ -147,8 +147,8 @@ $entregasAlumnos = $stmtEntregasAlumnos->fetchAll(PDO::FETCH_ASSOC);
                 </p>
 
                 <p class="text-sm text-slate-400">
-                    <strong>Fecha límite:</strong>
-                    <?= !empty($entrega['fecha_limite']) ? htmlspecialchars($entrega['fecha_limite']) : 'Sin fecha límite' ?>
+                    <strong><?= t('deadline') ?>:</strong>
+                    <?= !empty($entrega['fecha_limite']) ? htmlspecialchars($entrega['fecha_limite']) : t('no_deadline') ?>
                 </p>
             </div>
         </div>
@@ -166,10 +166,10 @@ $entregasAlumnos = $stmtEntregasAlumnos->fetchAll(PDO::FETCH_ASSOC);
         <?php endif; ?>
 
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-            <h2 class="text-2xl font-bold mb-6">Entregas recibidas</h2>
+            <h2 class="text-2xl font-bold mb-6"><?= t('received_deliveries') ?></h2>
 
             <?php if (count($entregasAlumnos) === 0): ?>
-                <p class="text-slate-400">Todavía no hay entregas de alumnos para esta fase.</p>
+                <p class="text-slate-400"><?= t('no_student_deliveries_for_phase_yet') ?></p>
             <?php else: ?>
                 <div class="space-y-6">
                     <?php foreach ($entregasAlumnos as $fila): ?>
@@ -183,24 +183,24 @@ $entregasAlumnos = $stmtEntregasAlumnos->fetchAll(PDO::FETCH_ASSOC);
 
                                         <?php if ($fila['estado'] === 'corregido' && (int)$fila['liberada'] === 1): ?>
                                             <span class="px-3 py-1 rounded-full text-sm font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                                                Corregido y liberado
+                                                <?= t('corrected_and_released') ?>
                                             </span>
                                         <?php elseif ($fila['estado'] === 'corregido'): ?>
                                             <span class="px-3 py-1 rounded-full text-sm font-semibold bg-green-500/20 text-green-300 border border-green-500/30">
-                                                Corregido
+                                                <?= t('corrected_status') ?>
                                             </span>
                                         <?php else: ?>
                                             <span class="px-3 py-1 rounded-full text-sm font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                                                Entregado
+                                                <?= t('submitted') ?>
                                             </span>
                                         <?php endif; ?>
                                     </div>
 
                                     <div class="space-y-2 text-slate-300">
-                                        <p><strong>Email:</strong> <?= htmlspecialchars($fila['email']) ?></p>
-                                        <p><strong>Rol:</strong> <?= htmlspecialchars($fila['rol']) ?></p>
-                                        <p><strong>Fecha de entrega:</strong> <?= htmlspecialchars($fila['entregado_en']) ?></p>
-                                        <p><strong>Archivo:</strong> <?= htmlspecialchars($fila['nombre_archivo_original']) ?></p>
+                                        <p><strong><?= t('email') ?>:</strong> <?= htmlspecialchars($fila['email']) ?></p>
+                                        <p><strong><?= t('role') ?>:</strong> <?= htmlspecialchars($fila['rol']) ?></p>
+                                        <p><strong><?= t('submission_date') ?>:</strong> <?= htmlspecialchars($fila['entregado_en']) ?></p>
+                                        <p><strong><?= t('file') ?>:</strong> <?= htmlspecialchars($fila['nombre_archivo_original']) ?></p>
                                     </div>
 
                                     <div class="mt-4 flex flex-wrap gap-3">
@@ -209,29 +209,29 @@ $entregasAlumnos = $stmtEntregasAlumnos->fetchAll(PDO::FETCH_ASSOC);
                                             target="_blank"
                                             class="bg-sky-500 hover:bg-sky-600 px-4 py-2 rounded-xl font-semibold"
                                         >
-                                            Ver / descargar archivo
+                                            <?= t('view_download_file') ?>
                                         </a>
                                     </div>
 
                                     <?php if ($fila['nota'] !== null || !empty($fila['comentario'])): ?>
                                         <div class="mt-5 bg-slate-900 border border-slate-700 rounded-xl p-4">
-                                            <h4 class="font-bold mb-2">Corrección actual</h4>
+                                            <h4 class="font-bold mb-2"><?= t('current_correction') ?></h4>
 
                                             <?php if ($fila['nota'] !== null): ?>
                                                 <p class="text-slate-300 mb-2">
-                                                    <strong>Nota:</strong> <?= htmlspecialchars($fila['nota']) ?>/10
+                                                    <strong><?= t('grade') ?>:</strong> <?= htmlspecialchars($fila['nota']) ?>/10
                                                 </p>
                                             <?php endif; ?>
 
                                             <?php if (!empty($fila['comentario'])): ?>
                                                 <p class="text-slate-300 whitespace-pre-line">
-                                                    <strong>Comentario:</strong><br>
+                                                    <strong><?= t('comment') ?>:</strong><br>
                                                     <?= htmlspecialchars($fila['comentario']) ?>
                                                 </p>
                                             <?php endif; ?>
 
                                             <p class="text-slate-300 mt-2">
-                                                <strong>Liberada:</strong> <?= (int)$fila['liberada'] === 1 ? 'Sí' : 'No' ?>
+                                                <strong><?= t('released') ?>:</strong> <?= (int)$fila['liberada'] === 1 ? t('yes') : t('no') ?>
                                             </p>
                                         </div>
                                     <?php endif; ?>
@@ -240,7 +240,7 @@ $entregasAlumnos = $stmtEntregasAlumnos->fetchAll(PDO::FETCH_ASSOC);
                                 <div class="xl:w-[360px] w-full">
                                     <div class="bg-slate-900 border border-slate-700 rounded-2xl p-4">
                                         <h4 class="text-lg font-bold mb-4">
-                                            <?= $fila['estado'] === 'corregido' ? 'Actualizar corrección' : 'Corregir entrega' ?>
+                                            <?= $fila['estado'] === 'corregido' ? t('update_correction') : t('correct_submission') ?>
                                         </h4>
 
                                         <form method="POST" class="space-y-4">
@@ -251,7 +251,7 @@ $entregasAlumnos = $stmtEntregasAlumnos->fetchAll(PDO::FETCH_ASSOC);
                                             >
 
                                             <div>
-                                                <label class="block mb-2 font-semibold">Nota /10</label>
+                                                <label class="block mb-2 font-semibold"><?= t('grade_out_of_10') ?></label>
                                                 <input
                                                     type="number"
                                                     name="nota"
@@ -265,12 +265,12 @@ $entregasAlumnos = $stmtEntregasAlumnos->fetchAll(PDO::FETCH_ASSOC);
                                             </div>
 
                                             <div>
-                                                <label class="block mb-2 font-semibold">Comentario</label>
+                                                <label class="block mb-2 font-semibold"><?= t('comment') ?></label>
                                                 <textarea
                                                     name="comentario"
                                                     rows="6"
                                                     class="w-full p-3 rounded-xl bg-slate-800 border border-slate-700"
-                                                    placeholder="Escribe observaciones, mejoras o feedback para el alumno"
+                                                    placeholder="<?= t('correction_comment_placeholder') ?>"
                                                 ><?= htmlspecialchars($fila['comentario'] ?? '') ?></textarea>
                                             </div>
 
@@ -284,7 +284,7 @@ $entregasAlumnos = $stmtEntregasAlumnos->fetchAll(PDO::FETCH_ASSOC);
                                                     class="h-4 w-4"
                                                 >
                                                 <label for="liberada_<?= (int)$fila['id'] ?>" class="text-sm text-slate-300">
-                                                    Liberar siguiente entrega
+                                                    <?= t('release_next_delivery') ?>
                                                 </label>
                                             </div>
 
@@ -292,7 +292,7 @@ $entregasAlumnos = $stmtEntregasAlumnos->fetchAll(PDO::FETCH_ASSOC);
                                                 type="submit"
                                                 class="w-full bg-emerald-500 hover:bg-emerald-600 px-4 py-3 rounded-xl font-semibold"
                                             >
-                                                Guardar corrección
+                                                <?= t('save_correction') ?>
                                             </button>
                                         </form>
                                     </div>
@@ -304,5 +304,7 @@ $entregasAlumnos = $stmtEntregasAlumnos->fetchAll(PDO::FETCH_ASSOC);
             <?php endif; ?>
         </div>
     </div>
+</div>
+
 </body>
 </html>

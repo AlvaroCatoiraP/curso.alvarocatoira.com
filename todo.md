@@ -6,6 +6,8 @@
 - Nota media  
 - Última actividad  
 
+LISTO
+
 ---
 
 ## 🧠 2. Corrección automática (semi-automática)
@@ -13,6 +15,7 @@
 - Validación de código (comparar output esperado)  
 - Feedback automático básico  
 
+Listo  
 ---
 
 ## 📂 3. Sistema de entregas mejorado
@@ -91,3 +94,4 @@
 1. Dashboard de progreso  
 2. Sistema de entregas mejorado  
 3. Panel para padres  
+

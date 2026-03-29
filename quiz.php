@@ -8,40 +8,64 @@ exiger_connexion();
 $usuarioId = $_SESSION['user_id'] ?? $_SESSION['id'] ?? $_SESSION['usuario_id'] ?? null;
 
 if (!$usuarioId) {
-    die('Usuario no identificado.');
+    die(t('user_not_identified'));
 }
 
 $quizId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if ($quizId <= 0) {
-    die('Quiz no válido.');
+    die(t('invalid_quiz'));
 }
 
 $stmt = $pdo->prepare("
-    SELECT id, capitulo, titulo, descripcion, duracion_minutos
-    FROM quizzes
-    WHERE id = :id
-      AND activo = 1
+    SELECT 
+        q.id,
+        q.capitulo,
+        COALESCE(qt.titulo, q.titulo) AS titulo,
+        COALESCE(qt.descripcion, q.descripcion) AS descripcion,
+        q.duracion_minutos
+    FROM quizzes q
+    LEFT JOIN quizzes_traducciones qt
+        ON qt.quiz_id = q.id
+       AND qt.lang = :lang
+    WHERE q.id = :id
+      AND q.activo = 1
     LIMIT 1
 ");
-$stmt->execute(['id' => $quizId]);
+$stmt->execute([
+    'id' => $quizId,
+    'lang' => $lang
+]);
 $quiz = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$quiz) {
-    die('Quiz no encontrado.');
+    die(t('quiz_not_found'));
 }
 
 $stmt = $pdo->prepare("
-    SELECT id, pregunta, opcion_a, opcion_b, opcion_c, opcion_d, orden
-    FROM quiz_preguntas
-    WHERE quiz_id = :quiz_id
-    ORDER BY orden ASC, id ASC
+    SELECT 
+        qp.id,
+        COALESCE(qpt.pregunta, qp.pregunta) AS pregunta,
+        COALESCE(qpt.opcion_a, qp.opcion_a) AS opcion_a,
+        COALESCE(qpt.opcion_b, qp.opcion_b) AS opcion_b,
+        COALESCE(qpt.opcion_c, qp.opcion_c) AS opcion_c,
+        COALESCE(qpt.opcion_d, qp.opcion_d) AS opcion_d,
+        qp.orden
+    FROM quiz_preguntas qp
+    LEFT JOIN quiz_preguntas_traducciones qpt
+        ON qpt.pregunta_id = qp.id
+       AND qpt.lang = :lang
+    WHERE qp.quiz_id = :quiz_id
+    ORDER BY qp.orden ASC, qp.id ASC
 ");
-$stmt->execute(['quiz_id' => $quizId]);
+$stmt->execute([
+    'quiz_id' => $quizId,
+    'lang' => $lang
+]);
 $preguntas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 if (!$preguntas) {
-    die('Este quiz no tiene preguntas todavía.');
+    die(t('quiz_no_questions'));
 }
 
 $inicioTimestamp = time();
@@ -64,14 +88,14 @@ $duracionSegundos = ((int)$quiz['duracion_minutos']) * 60;
         <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
             <div>
                 <p class="text-sky-300 text-sm font-semibold uppercase tracking-wide">
-                    Capítulo <?= htmlspecialchars($quiz['capitulo']) ?>
+                    <?= t('chapter') ?> <?= htmlspecialchars($quiz['capitulo']) ?>
                 </p>
                 <h1 class="text-3xl font-bold mt-1"><?= htmlspecialchars($quiz['titulo']) ?></h1>
                 <p class="text-slate-400 mt-2"><?= htmlspecialchars($quiz['descripcion'] ?? '') ?></p>
             </div>
 
             <div class="bg-slate-900 border border-slate-800 rounded-2xl px-5 py-4 text-center">
-                <p class="text-slate-400 text-sm">Tiempo restante</p>
+                <p class="text-slate-400 text-sm"><?= t('remaining_time') ?></p>
                 <p id="timer" class="text-2xl font-bold mt-1"><?= (int)$quiz['duracion_minutos'] ?>:00</p>
             </div>
         </div>
@@ -84,7 +108,7 @@ $duracionSegundos = ((int)$quiz['duracion_minutos']) * 60;
             <?php foreach ($preguntas as $index => $pregunta): ?>
                 <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
                     <h2 class="text-xl font-bold">
-                        Pregunta <?= $index + 1 ?>
+                        <?= t('question') ?> <?= $index + 1 ?>
                     </h2>
                     <p class="text-slate-200 mt-3">
                         <?= htmlspecialchars($pregunta['pregunta']) ?>
@@ -111,7 +135,7 @@ $duracionSegundos = ((int)$quiz['duracion_minutos']) * 60;
 
             <div class="flex justify-end">
                 <button type="submit" class="bg-sky-500 hover:bg-sky-600 px-6 py-3 rounded-xl font-semibold">
-                    Entregar quiz
+                    <?= t('submit_quiz') ?>
                 </button>
             </div>
         </form>

@@ -1,5 +1,6 @@
 <?php
 require_once 'includes/auth.php';
+require_once 'includes/lang.php';
 require_once 'includes/db.php';
 
 exiger_connexion();
@@ -14,11 +15,11 @@ $stmt = $pdo->query($sql);
 $proyectos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="<?= htmlspecialchars($lang) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Proyectos</title>
+    <title><?= t('my_projects') ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-white min-h-screen">
@@ -28,23 +29,21 @@ $proyectos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <div class="max-w-7xl mx-auto p-6">
     <div class="max-w-6xl mx-auto p-8">
 
-        <!-- HEADER -->
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <div>
-                <h1 class="text-3xl font-bold">Proyectos</h1>
+                <h1 class="text-3xl font-bold"><?= t('my_projects') ?></h1>
                 <p class="text-slate-400 mt-2">
-                    Trabajos largos con varias entregas secuenciales.
+                    <?= t('projects_page_desc') ?>
                 </p>
             </div>
 
             <div class="flex gap-3">
                 <a href="dashboard.php" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl font-semibold">
-                    Dashboard
+                    <?= t('back_dashboard') ?>
                 </a>
             </div>
         </div>
 
-        <!-- LISTA DE PROYECTOS -->
         <div class="space-y-6">
 
             <?php foreach ($proyectos as $proyecto): ?>
@@ -58,7 +57,6 @@ $proyectos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <?php
                         $texto = htmlspecialchars($proyecto['descripcion']);
 
-                        // Reemplazar URLs por "Ver documentación"
                         $texto = preg_replace_callback(
                             '/(https?:\/\/[^\s]+)/',
                             function ($matches) {
@@ -68,12 +66,12 @@ $proyectos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         );
 
                         echo nl2br($texto);
-                        ?>
+                    ?>
                     </p>
 
                     <div class="mt-4 text-sm text-slate-400">
-                        <p>Profesor: <?= htmlspecialchars($proyecto['profesor_nombre']) ?></p>
-                        <p>Creado: <?= htmlspecialchars($proyecto['creado_en']) ?></p>
+                        <p><?= t('teacher') ?>: <?= htmlspecialchars($proyecto['profesor_nombre']) ?></p>
+                        <p><?= t('created') ?>: <?= htmlspecialchars($proyecto['creado_en']) ?></p>
                     </div>
 
                     <div class="mt-5">
@@ -81,7 +79,7 @@ $proyectos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             href="proyecto_ver.php?id=<?= (int)$proyecto['id'] ?>"
                             class="bg-sky-500 hover:bg-sky-600 px-5 py-3 rounded-xl font-semibold inline-block"
                         >
-                            Ver proyecto
+                            <?= t('view_project') ?>
                         </a>
                     </div>
                 </div>
@@ -89,7 +87,7 @@ $proyectos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             <?php if (count($proyectos) === 0): ?>
                 <div class="text-slate-400">
-                    No hay proyectos disponibles todavía.
+                    <?= t('no_projects_available') ?>
                 </div>
             <?php endif; ?>
 

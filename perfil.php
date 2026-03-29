@@ -8,7 +8,7 @@ exiger_connexion();
 $usuarioId = $_SESSION['user_id'] ?? $_SESSION['id'] ?? $_SESSION['usuario_id'] ?? null;
 
 if (!$usuarioId) {
-    die('Usuario no identificado.');
+    die(t('user_not_identified'));
 }
 
 $mensaje = null;
@@ -29,7 +29,7 @@ $stmt->execute(['id' => $usuarioId]);
 $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$usuario) {
-    die('Usuario no encontrado.');
+    die(t('user_not_found'));
 }
 
 $nombre = $usuario['nombre'];
@@ -48,9 +48,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $passwordConfirmar = $_POST['password_confirmar'] ?? '';
 
     if ($nombreNuevo === '' || $emailNuevo === '') {
-        $error = 'El nombre y el email son obligatorios.';
+        $error = t('name_email_required');
     } elseif (!filter_var($emailNuevo, FILTER_VALIDATE_EMAIL)) {
-        $error = 'El email no es válido.';
+        $error = t('invalid_email');
     } else {
         try {
             // Verificar si el email ya lo usa otro usuario
@@ -68,18 +68,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $emailExistente = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($emailExistente) {
-                $error = 'Ese email ya está siendo usado por otro usuario.';
+                $error = t('email_already_used');
             } else {
                 // Si quiere cambiar contraseña, verificar la actual
                 $cambiarPassword = ($passwordActual !== '' || $passwordNueva !== '' || $passwordConfirmar !== '');
 
                 if ($cambiarPassword) {
                     if ($passwordActual === '' || $passwordNueva === '' || $passwordConfirmar === '') {
-                        $error = 'Para cambiar la contraseña debes completar los tres campos.';
+                        $error = t('fill_three_password_fields');
                     } elseif ($passwordNueva !== $passwordConfirmar) {
-                        $error = 'La nueva contraseña y la confirmación no coinciden.';
+                        $error = t('password_confirmation_mismatch');
                     } elseif (strlen($passwordNueva) < 6) {
-                        $error = 'La nueva contraseña debe tener al menos 6 caracteres.';
+                        $error = t('password_min_length');
                     } else {
                         $stmt = $pdo->prepare("
                             SELECT password_hash
@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $filaPassword = $stmt->fetch(PDO::FETCH_ASSOC);
 
                         if (!$filaPassword || !password_verify($passwordActual, $filaPassword['password_hash'])) {
-                            $error = 'La contraseña actual no es correcta.';
+                            $error = t('current_password_incorrect');
                         }
                     }
                 }
@@ -133,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['user_email'] = $emailNuevo;
                     }
 
-                    $mensaje = 'Perfil actualizado correctamente.';
+                    $mensaje = t('profile_updated_successfully');
 
                     // Recargar datos actualizados
                     $stmt = $pdo->prepare("
@@ -150,7 +150,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         } catch (PDOException $e) {
-            $error = 'Error al actualizar el perfil: ' . $e->getMessage();
+            $error = t('profile_update_error') . ': ' . $e->getMessage();
         }
     }
 }
@@ -160,7 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi perfil</title>
+    <title><?= t('my_profile') ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-white min-h-screen">
@@ -171,25 +171,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
             <p class="text-sky-300 text-sm font-semibold uppercase tracking-wide">
-                Cuenta
+                <?= t('account') ?>
             </p>
             <h1 class="text-3xl md:text-4xl font-bold mt-1">
-                Mi perfil
+                <?= t('my_profile') ?>
             </h1>
             <p class="text-slate-400 mt-2">
-                Aquí puedes actualizar tus datos personales y tu contraseña.
+                <?= t('profile_update_desc') ?>
             </p>
         </div>
 
         <a href="dashboard.php" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl font-semibold transition">
-            ← Dashboard
+            ← <?= t('back_dashboard') ?>
         </a>
     </div>
 
     <div class="mt-8 grid lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2">
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-                <h2 class="text-2xl font-bold mb-5">Editar perfil</h2>
+                <h2 class="text-2xl font-bold mb-5"><?= t('edit_profile') ?></h2>
 
                 <?php if ($mensaje): ?>
                     <div class="mb-5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 rounded-xl p-4 text-sm">
@@ -206,7 +206,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <form method="POST" class="space-y-5">
                     <div>
                         <label class="block text-sm font-medium text-slate-300 mb-2">
-                            Nombre
+                            <?= t('name') ?>
                         </label>
                         <input
                             type="text"
@@ -219,7 +219,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     <div>
                         <label class="block text-sm font-medium text-slate-300 mb-2">
-                            Email
+                            <?= t('email') ?>
                         </label>
                         <input
                             type="email"
@@ -231,15 +231,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
                     <div class="border-t border-slate-800 pt-5">
-                        <h3 class="text-xl font-bold mb-4">Cambiar contraseña</h3>
+                        <h3 class="text-xl font-bold mb-4"><?= t('change_password') ?></h3>
                         <p class="text-slate-400 text-sm mb-4">
-                            Deja estos campos vacíos si no quieres cambiar la contraseña.
+                            <?= t('leave_password_blank') ?>
                         </p>
 
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-medium text-slate-300 mb-2">
-                                    Contraseña actual
+                                    <?= t('current_password') ?>
                                 </label>
                                 <input
                                     type="password"
@@ -250,7 +250,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                             <div>
                                 <label class="block text-sm font-medium text-slate-300 mb-2">
-                                    Nueva contraseña
+                                    <?= t('new_password') ?>
                                 </label>
                                 <input
                                     type="password"
@@ -261,7 +261,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                             <div>
                                 <label class="block text-sm font-medium text-slate-300 mb-2">
-                                    Confirmar nueva contraseña
+                                    <?= t('confirm_new_password') ?>
                                 </label>
                                 <input
                                     type="password"
@@ -277,7 +277,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             type="submit"
                             class="bg-sky-500 hover:bg-sky-600 px-5 py-3 rounded-xl font-semibold transition"
                         >
-                            Guardar cambios
+                            <?= t('save_changes') ?>
                         </button>
                     </div>
                 </form>
@@ -286,31 +286,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <div>
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-                <h2 class="text-xl font-bold mb-4">Información de la cuenta</h2>
+                <h2 class="text-xl font-bold mb-4"><?= t('account_information') ?></h2>
 
                 <div class="space-y-4 text-sm">
                     <div>
-                        <p class="text-slate-400">Nombre actual</p>
+                        <p class="text-slate-400"><?= t('current_name') ?></p>
                         <p class="text-white font-semibold mt-1"><?= htmlspecialchars($usuario['nombre']) ?></p>
                     </div>
 
                     <div>
-                        <p class="text-slate-400">Email actual</p>
+                        <p class="text-slate-400"><?= t('current_email') ?></p>
                         <p class="text-white font-semibold mt-1"><?= htmlspecialchars($usuario['email']) ?></p>
                     </div>
 
                     <div>
-                        <p class="text-slate-400">Rol</p>
+                        <p class="text-slate-400"><?= t('role') ?></p>
                         <p class="text-white font-semibold mt-1"><?= htmlspecialchars($usuario['rol']) ?></p>
                     </div>
 
                     <div>
-                        <p class="text-slate-400">Estado</p>
+                        <p class="text-slate-400"><?= t('status') ?></p>
                         <p class="text-white font-semibold mt-1"><?= htmlspecialchars($usuario['estado']) ?></p>
                     </div>
 
                     <div>
-                        <p class="text-slate-400">Miembro desde</p>
+                        <p class="text-slate-400"><?= t('member_since') ?></p>
                         <p class="text-white font-semibold mt-1">
                             <?= !empty($usuario['creado_en']) ? date('d/m/Y H:i', strtotime($usuario['creado_en'])) : '-' ?>
                         </p>
@@ -319,9 +319,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <div class="mt-6 bg-slate-900 border border-slate-800 rounded-2xl p-6">
-                <h2 class="text-xl font-bold mb-3">Consejo</h2>
+                <h2 class="text-xl font-bold mb-3"><?= t('tip') ?></h2>
                 <p class="text-slate-400 text-sm leading-6">
-                    Usa una contraseña segura y un email al que tengas acceso, para no perder tu cuenta.
+                    <?= t('profile_security_tip') ?>
                 </p>
             </div>
         </div>

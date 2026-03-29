@@ -1,5 +1,6 @@
 <?php
 require_once 'includes/auth.php';
+require_once 'includes/lang.php';
 require_once 'includes/db.php';
 
 exiger_admin();
@@ -13,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fecha_limite = trim($_POST['fecha_limite'] ?? '');
 
     if ($titulo === '' || $enunciado === '') {
-        $message = "El título y el enunciado son obligatorios.";
+        $message = t('homework_required_fields');
     } else {
         $fecha_limite_sql = $fecha_limite !== '' ? $fecha_limite : null;
 
@@ -21,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare($sql);
         $stmt->execute([$titulo, $enunciado, $fecha_limite_sql, $_SESSION['user_id']]);
 
-        $success = "Deber creado correctamente.";
+        $success = t('homework_created');
     }
 }
 
@@ -33,11 +34,11 @@ $stmt = $pdo->query($sql);
 $deberes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="<?= htmlspecialchars($lang) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestionar deberes</title>
+    <title><?= t('manage_homework') ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-white min-h-screen">
@@ -48,13 +49,13 @@ $deberes = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="max-w-6xl mx-auto p-8">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <div>
-                <h1 class="text-3xl font-bold">Gestionar deberes</h1>
-                <p class="text-slate-400 mt-2">Crea deberes y publica enunciados para tus estudiantes.</p>
+                <h1 class="text-3xl font-bold"><?= t('manage_homework') ?></h1>
+                <p class="text-slate-400 mt-2"><?= t('homework_desc') ?></p>
             </div>
         </div>
 
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-10">
-            <h2 class="text-2xl font-bold mb-6">Crear un deber</h2>
+            <h2 class="text-2xl font-bold mb-6"><?= t('create_homework') ?></h2>
 
             <?php if ($message): ?>
                 <p class="mb-4 text-red-400"><?= htmlspecialchars($message) ?></p>
@@ -66,54 +67,64 @@ $deberes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             <form method="POST" class="space-y-4">
                 <div>
-                    <label class="block mb-2 font-semibold">Título</label>
+                    <label class="block mb-2 font-semibold"><?= t('title') ?></label>
                     <input type="text" name="titulo" class="w-full p-3 rounded-xl bg-slate-800 border border-slate-700">
                 </div>
 
                 <div>
-                    <label class="block mb-2 font-semibold">Enunciado</label>
+                    <label class="block mb-2 font-semibold"><?= t('statement') ?></label>
                     <textarea name="enunciado" rows="8" class="w-full p-3 rounded-xl bg-slate-800 border border-slate-700"></textarea>
                 </div>
 
                 <div>
-                    <label class="block mb-2 font-semibold">Fecha límite</label>
+                    <label class="block mb-2 font-semibold"><?= t('deadline') ?></label>
                     <input type="datetime-local" name="fecha_limite" class="p-3 rounded-xl bg-slate-800 border border-slate-700">
                 </div>
 
                 <button class="bg-sky-500 hover:bg-sky-600 px-5 py-3 rounded-xl font-semibold">
-                    Crear deber
+                    <?= t('create_homework_btn') ?>
                 </button>
             </form>
         </div>
 
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-            <h2 class="text-2xl font-bold mb-6">Deberes publicados</h2>
+            <h2 class="text-2xl font-bold mb-6"><?= t('published_homework') ?></h2>
 
             <div class="space-y-4">
                 <?php foreach ($deberes as $deber): ?>
                     <div class="bg-slate-800 rounded-2xl p-5 border border-slate-700">
                         <h3 class="text-xl font-bold"><?= htmlspecialchars($deber['titulo']) ?></h3>
-                        <p class="text-slate-300 mt-3 whitespace-pre-line"><?= htmlspecialchars($deber['enunciado']) ?></p>
+
+                        <p class="text-slate-300 mt-3 whitespace-pre-line">
+                            <?= htmlspecialchars($deber['enunciado']) ?>
+                        </p>
+
                         <div class="mt-4 text-sm text-slate-400">
-                            <p>Profesor: <?= htmlspecialchars($deber['admin_nombre']) ?></p>
-                            <p>Creado: <?= htmlspecialchars($deber['creado_en']) ?></p>
-                            <p>Fecha límite: <?= $deber['fecha_limite'] ? htmlspecialchars($deber['fecha_limite']) : 'Sin fecha límite' ?></p>
+                            <p><?= t('teacher') ?>: <?= htmlspecialchars($deber['admin_nombre']) ?></p>
+                            <p><?= t('created') ?>: <?= htmlspecialchars($deber['creado_en']) ?></p>
+                            <p>
+                                <?= t('deadline') ?>:
+                                <?= $deber['fecha_limite'] ? htmlspecialchars($deber['fecha_limite']) : t('no_deadline') ?>
+                            </p>
                         </div>
+
                         <div class="mt-4">
-                            <a href="admin_entregas_deber.php?id=<?= (int)$deber['id'] ?>" class="bg-emerald-500 hover:bg-emerald-600 px-4 py-2 rounded-xl font-semibold inline-block">
-                                Ver entregas
+                            <a href="admin_entregas_deber.php?id=<?= (int)$deber['id'] ?>"
+                               class="bg-emerald-500 hover:bg-emerald-600 px-4 py-2 rounded-xl font-semibold inline-block">
+                                <?= t('view_submissions') ?>
                             </a>
+
                             <a href="admin_eliminar_deber.php?id=<?= (int)$deber['id'] ?>"
-                                onclick="return confirm('¿Eliminar este deber y todas las entregas?')"
-                                class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl font-semibold">
-                                Eliminar
+                               onclick="return confirm('<?= t('confirm_delete_homework') ?>')"
+                               class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl font-semibold">
+                                <?= t('delete') ?>
                             </a>
                         </div>
                     </div>
                 <?php endforeach; ?>
 
                 <?php if (count($deberes) === 0): ?>
-                    <p class="text-slate-400">No hay deberes todavía.</p>
+                    <p class="text-slate-400"><?= t('no_homework_yet') ?></p>
                 <?php endif; ?>
             </div>
         </div>

@@ -1,5 +1,6 @@
 <?php
 require_once 'includes/auth.php';
+require_once 'includes/lang.php';
 require_once 'includes/db.php';
 
 exiger_connexion();
@@ -8,13 +9,13 @@ $usuario_id = $_SESSION['user_id'];
 $usuario_rol = $_SESSION['rol'] ?? '';
 
 if ($usuario_rol !== 'admin' && $usuario_rol !== 'student') {
-    die("Rol no permitido.");
+    die(t('role_not_allowed'));
 }
 
 $proyecto_id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 
 if ($proyecto_id <= 0) {
-    die("Proyecto no válido.");
+    die(t('invalid_project'));
 }
 
 $sqlProyecto = "
@@ -28,7 +29,7 @@ $stmtProyecto->execute([$proyecto_id]);
 $proyecto = $stmtProyecto->fetch(PDO::FETCH_ASSOC);
 
 if (!$proyecto) {
-    die("Proyecto no encontrado.");
+    die(t('project_not_found'));
 }
 
 $sqlEntregas = "
@@ -88,7 +89,7 @@ function obtenerEstadoEntrega(array $entrega, bool $desbloqueada, ?array $entreg
 
     if (!$desbloqueada && $entregaAlumno === null) {
         return [
-            'texto' => 'Bloqueada',
+            'texto' => t('blocked'),
             'clase' => 'bg-slate-700 text-slate-200',
             'puede_entregar' => false
         ];
@@ -97,7 +98,7 @@ function obtenerEstadoEntrega(array $entrega, bool $desbloqueada, ?array $entreg
     if ($entregaAlumno !== null) {
         if ($entregaAlumno['estado'] === 'corregido' && (int)$entregaAlumno['liberada'] === 1) {
             return [
-                'texto' => 'Corregida y liberada',
+                'texto' => t('corrected_and_released'),
                 'clase' => 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
                 'puede_entregar' => false
             ];
@@ -105,14 +106,14 @@ function obtenerEstadoEntrega(array $entrega, bool $desbloqueada, ?array $entreg
 
         if ($entregaAlumno['estado'] === 'corregido') {
             return [
-                'texto' => 'Corregida',
+                'texto' => t('corrected_status'),
                 'clase' => 'bg-green-500/20 text-green-300 border border-green-500/30',
                 'puede_entregar' => false
             ];
         }
 
         return [
-            'texto' => 'Entregada',
+            'texto' => t('submitted'),
             'clase' => 'bg-amber-500/20 text-amber-300 border border-amber-500/30',
             'puede_entregar' => false
         ];
@@ -120,21 +121,21 @@ function obtenerEstadoEntrega(array $entrega, bool $desbloqueada, ?array $entreg
 
     if ($fueraDePlazo) {
         return [
-            'texto' => 'Fuera de plazo',
+            'texto' => t('late'),
             'clase' => 'bg-red-500/20 text-red-300 border border-red-500/30',
             'puede_entregar' => false
         ];
     }
 
     return [
-        'texto' => 'Disponible',
+        'texto' => t('available'),
         'clase' => 'bg-sky-500/20 text-sky-300 border border-sky-500/30',
         'puede_entregar' => true
     ];
 }
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="<?= htmlspecialchars($lang) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -151,52 +152,51 @@ function obtenerEstadoEntrega(array $entrega, bool $desbloqueada, ?array $entreg
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <div>
                 <h1 class="text-3xl font-bold"><?= htmlspecialchars($proyecto['titulo']) ?></h1>
-                <p class="text-slate-400 mt-2">Proyecto con entregas secuenciales.</p>
+                <p class="text-slate-400 mt-2"><?= t('project_with_deliveries') ?></p>
             </div>
 
             <div class="flex gap-3 flex-wrap">
                 <?php if ($usuario_rol === 'admin'): ?>
                     <a href="admin_proyectos.php" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl font-semibold">
-                        Volver a proyectos
+                        <?= t('back_to_projects') ?>
                     </a>
                 <?php else: ?>
                     <a href="proyectos.php" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl font-semibold">
-                        Volver a proyectos
+                        <?= t('back_to_projects') ?>
                     </a>
                 <?php endif; ?>
             </div>
         </div>
 
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-8">
-            <h2 class="text-2xl font-bold">Descripción</h2>
-                <p class="text-slate-300 mt-3 whitespace-pre-line">
-                    <?php
-                        $texto = htmlspecialchars($proyecto['descripcion']);
+            <h2 class="text-2xl font-bold"><?= t('description') ?></h2>
+            <p class="text-slate-300 mt-3 whitespace-pre-line">
+                <?php
+                    $texto = htmlspecialchars($proyecto['descripcion']);
 
-                        // Reemplazar URLs por "Ver documentación"
-                        $texto = preg_replace_callback(
-                            '/(https?:\/\/[^\s]+)/',
-                            function ($matches) {
-                                return '<a href="' . $matches[0] . '" target="_blank" class="text-sky-400 underline hover:text-sky-300 font-semibold">Ver documentación</a>';
-                            },
-                            $texto
-                        );
+                    $texto = preg_replace_callback(
+                        '/(https?:\/\/[^\s]+)/',
+                        function ($matches) {
+                            return '<a href="' . $matches[0] . '" target="_blank" class="text-sky-400 underline hover:text-sky-300 font-semibold">' . t('view_documentation') . '</a>';
+                        },
+                        $texto
+                    );
 
-                        echo nl2br($texto);
-                        ?>
-                    </p>
+                    echo nl2br($texto);
+                ?>
+            </p>
 
             <div class="mt-4 text-sm text-slate-400 space-y-1">
-                <p>Profesor: <?= htmlspecialchars($proyecto['profesor_nombre']) ?></p>
-                <p>Creado: <?= htmlspecialchars($proyecto['creado_en']) ?></p>
+                <p><?= t('teacher') ?>: <?= htmlspecialchars($proyecto['profesor_nombre']) ?></p>
+                <p><?= t('created') ?>: <?= htmlspecialchars($proyecto['creado_en']) ?></p>
             </div>
         </div>
 
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-            <h2 class="text-2xl font-bold mb-6">Entregas del proyecto</h2>
+            <h2 class="text-2xl font-bold mb-6"><?= t('project_deliveries') ?></h2>
 
             <?php if (count($entregas) === 0): ?>
-                <p class="text-slate-400">Este proyecto todavía no tiene entregas.</p>
+                <p class="text-slate-400"><?= t('project_no_deliveries_yet') ?></p>
             <?php else: ?>
                 <div class="space-y-5">
                     <?php foreach ($entregas as $indice => $entrega): ?>
@@ -218,7 +218,7 @@ function obtenerEstadoEntrega(array $entrega, bool $desbloqueada, ?array $entreg
                                 <div class="flex-1">
                                     <div class="flex flex-wrap items-center gap-3 mb-3">
                                         <h3 class="text-xl font-bold">
-                                            Entrega <?= (int)$entrega['orden_entrega'] ?>: <?= htmlspecialchars($entrega['titulo']) ?>
+                                            <?= t('delivery') ?> <?= (int)$entrega['orden_entrega'] ?>: <?= htmlspecialchars($entrega['titulo']) ?>
                                         </h3>
 
                                         <span class="px-3 py-1 rounded-full text-sm font-semibold <?= $estado['clase'] ?>">
@@ -232,21 +232,21 @@ function obtenerEstadoEntrega(array $entrega, bool $desbloqueada, ?array $entreg
 
                                     <div class="mt-4 text-sm text-slate-400 space-y-1">
                                         <p>
-                                            <strong>Fecha límite:</strong>
-                                            <?= !empty($entrega['fecha_limite']) ? htmlspecialchars($entrega['fecha_limite']) : 'Sin fecha límite' ?>
+                                            <strong><?= t('deadline') ?>:</strong>
+                                            <?= !empty($entrega['fecha_limite']) ? htmlspecialchars($entrega['fecha_limite']) : t('no_deadline') ?>
                                         </p>
 
                                         <?php if ($entregaAlumno !== null): ?>
-                                            <p><strong>Entregado el:</strong> <?= htmlspecialchars($entregaAlumno['entregado_en']) ?></p>
-                                            <p><strong>Archivo:</strong> <?= htmlspecialchars($entregaAlumno['nombre_archivo_original']) ?></p>
+                                            <p><strong><?= t('submitted_on') ?>:</strong> <?= htmlspecialchars($entregaAlumno['entregado_en']) ?></p>
+                                            <p><strong><?= t('file') ?>:</strong> <?= htmlspecialchars($entregaAlumno['nombre_archivo_original']) ?></p>
 
                                             <?php if ($entregaAlumno['nota'] !== null): ?>
-                                                <p><strong>Nota:</strong> <?= htmlspecialchars($entregaAlumno['nota']) ?></p>
+                                                <p><strong><?= t('grade') ?>:</strong> <?= htmlspecialchars($entregaAlumno['nota']) ?></p>
                                             <?php endif; ?>
 
                                             <?php if (!empty($entregaAlumno['comentario'])): ?>
                                                 <div class="mt-3 p-3 rounded-xl bg-slate-900 border border-slate-700">
-                                                    <p class="font-semibold text-slate-200 mb-1">Comentario del profesor:</p>
+                                                    <p class="font-semibold text-slate-200 mb-1"><?= t('teacher_comment') ?>:</p>
                                                     <p class="text-slate-300 whitespace-pre-line">
                                                         <?= htmlspecialchars($entregaAlumno['comentario']) ?>
                                                     </p>
@@ -255,7 +255,7 @@ function obtenerEstadoEntrega(array $entrega, bool $desbloqueada, ?array $entreg
 
                                             <?php if ($entregaAlumno['estado'] === 'corregido' && (int)$entregaAlumno['liberada'] === 0): ?>
                                                 <div class="mt-3 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-300">
-                                                    Esta fase ya fue corregida, pero todavía no ha sido liberada por el profesor.
+                                                    <?= t('phase_corrected_not_released') ?>
                                                 </div>
                                             <?php endif; ?>
                                         <?php elseif ($usuario_rol === 'student' && $indice > 0): ?>
@@ -265,7 +265,7 @@ function obtenerEstadoEntrega(array $entrega, bool $desbloqueada, ?array $entreg
                                             ?>
                                             <?php if ($datosAnterior !== null && $datosAnterior['estado'] === 'corregido' && (int)$datosAnterior['liberada'] === 0): ?>
                                                 <div class="mt-3 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-300">
-                                                    Esperando validación del profesor para desbloquear esta entrega.
+                                                    <?= t('waiting_teacher_validation') ?>
                                                 </div>
                                             <?php endif; ?>
                                         <?php endif; ?>
@@ -278,7 +278,7 @@ function obtenerEstadoEntrega(array $entrega, bool $desbloqueada, ?array $entreg
                                             href="admin_proyecto_entregas_alumnos.php?entrega_id=<?= (int)$entrega['id'] ?>"
                                             class="bg-emerald-500 hover:bg-emerald-600 px-4 py-3 rounded-xl font-semibold text-center"
                                         >
-                                            Ver entregas de alumnos
+                                            <?= t('view_student_submissions') ?>
                                         </a>
                                     <?php else: ?>
                                         <?php if ($estado['puede_entregar']): ?>
@@ -297,7 +297,7 @@ function obtenerEstadoEntrega(array $entrega, bool $desbloqueada, ?array $entreg
                                                     type="submit"
                                                     class="w-full bg-sky-500 hover:bg-sky-600 px-4 py-3 rounded-xl font-semibold"
                                                 >
-                                                    Subir ZIP
+                                                    <?= t('upload_zip') ?>
                                                 </button>
                                             </form>
                                         <?php elseif ($entregaAlumno !== null && !empty($entregaAlumno['ruta_archivo'])): ?>
@@ -306,11 +306,11 @@ function obtenerEstadoEntrega(array $entrega, bool $desbloqueada, ?array $entreg
                                                 target="_blank"
                                                 class="bg-slate-700 hover:bg-slate-600 px-4 py-3 rounded-xl font-semibold text-center"
                                             >
-                                                Ver archivo enviado
+                                                <?= t('view_sent_file') ?>
                                             </a>
                                         <?php else: ?>
                                             <div class="bg-slate-900 border border-slate-700 px-4 py-3 rounded-xl text-sm text-slate-400">
-                                                Esta entrega no está disponible todavía.
+                                                <?= t('delivery_not_available_yet') ?>
                                             </div>
                                         <?php endif; ?>
                                     <?php endif; ?>

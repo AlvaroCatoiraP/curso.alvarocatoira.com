@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/lang.php';
 require_once __DIR__ . '/includes/db.php';
 
 exiger_admin();
@@ -37,20 +38,20 @@ try {
         $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
 
         if ($id <= 0) {
-            throw new Exception('Capítulo inválido.');
+            throw new Exception(t('invalid_chapter'));
         }
 
         if ($action === 'toggle_visible') {
             $visible = isset($_POST['visible']) ? (int)$_POST['visible'] : -1;
 
             if (!in_array($visible, [0, 1], true)) {
-                throw new Exception('Valor de visibilidad inválido.');
+                throw new Exception(t('invalid_visibility_value'));
             }
 
             $stmt = $pdo->prepare("UPDATE chapitres SET visible = ? WHERE id = ?");
             $stmt->execute([$visible, $id]);
 
-            $message = 'Visibilidad actualizada.';
+            $message = t('visibility_updated');
         }
 
         if ($action === 'delete') {
@@ -64,7 +65,7 @@ try {
 
             $pdo->commit();
 
-            $message = 'Capítulo eliminado.';
+            $message = t('chapter_deleted');
         }
     }
 } catch (Throwable $e) {
@@ -99,11 +100,11 @@ $stmt = $pdo->query($sql);
 $chapitres = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="<?= htmlspecialchars($lang) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestionar capítulos</title>
+    <title><?= t('manage_chapters') ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-white min-h-screen">
@@ -114,16 +115,16 @@ $chapitres = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="max-w-7xl mx-auto p-8">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
             <div>
-                <h1 class="text-3xl font-bold">Gestionar capítulos</h1>
-                <p class="text-slate-400 mt-2">Lista de capítulos del curso.</p>
+                <h1 class="text-3xl font-bold"><?= t('manage_chapters') ?></h1>
+                <p class="text-slate-400 mt-2"><?= t('chapters_list_desc') ?></p>
             </div>
 
             <div class="flex flex-wrap gap-3">
                 <a href="admin_dashboard.php" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl font-semibold">
-                    Dashboard admin
+                    <?= t('admin_dashboard') ?>
                 </a>
                 <a href="admin_chapitre_form.php" class="bg-sky-500 hover:bg-sky-600 px-4 py-2 rounded-xl font-semibold">
-                    Nuevo capítulo
+                    <?= t('new_chapter') ?>
                 </a>
             </div>
         </div>
@@ -145,18 +146,18 @@ $chapitres = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <table class="w-full min-w-[900px]">
                     <thead class="bg-slate-800">
                         <tr>
-                            <th class="text-left p-4">Orden</th>
-                            <th class="text-left p-4">Código</th>
-                            <th class="text-left p-4">Título ES</th>
-                            <th class="text-left p-4">Titre FR</th>
-                            <th class="text-left p-4">Visible</th>
-                            <th class="text-left p-4">Acciones</th>
+                            <th class="text-left p-4"><?= t('order') ?></th>
+                            <th class="text-left p-4"><?= t('code') ?></th>
+                            <th class="text-left p-4"><?= t('title_es') ?></th>
+                            <th class="text-left p-4"><?= t('title_fr') ?></th>
+                            <th class="text-left p-4"><?= t('visible') ?></th>
+                            <th class="text-left p-4"><?= t('actions') ?></th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (count($chapitres) === 0): ?>
                             <tr>
-                                <td colspan="6" class="p-4 text-slate-400">No hay capítulos todavía.</td>
+                                <td colspan="6" class="p-4 text-slate-400"><?= t('no_chapters_yet') ?></td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($chapitres as $chapitre): ?>
@@ -167,16 +168,16 @@ $chapitres = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <td class="p-4"><?= h($chapitre['titre_fr_affichage'] ?? '') ?></td>
                                     <td class="p-4">
                                         <?php if ((int)($chapitre['visible'] ?? 0) === 1): ?>
-                                            <span class="text-emerald-400 font-semibold">Sí</span>
+                                            <span class="text-emerald-400 font-semibold"><?= t('yes') ?></span>
                                         <?php else: ?>
-                                            <span class="text-red-400 font-semibold">No</span>
+                                            <span class="text-red-400 font-semibold"><?= t('no') ?></span>
                                         <?php endif; ?>
                                     </td>
                                     <td class="p-4">
                                         <div class="flex flex-wrap gap-2">
                                             <a href="admin_chapitre_form.php?id=<?= (int)$chapitre['id'] ?>"
                                                class="bg-sky-500 hover:bg-sky-600 px-3 py-2 rounded-xl font-semibold text-sm">
-                                                Editar
+                                                <?= t('edit') ?>
                                             </a>
 
                                             <?php if ((int)($chapitre['visible'] ?? 0) === 1): ?>
@@ -185,7 +186,7 @@ $chapitres = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                     <input type="hidden" name="id" value="<?= (int)$chapitre['id'] ?>">
                                                     <input type="hidden" name="visible" value="0">
                                                     <button type="submit" class="bg-red-500 hover:bg-red-600 px-3 py-2 rounded-xl font-semibold text-sm">
-                                                        Desactivar
+                                                        <?= t('deactivate') ?>
                                                     </button>
                                                 </form>
                                             <?php else: ?>
@@ -194,16 +195,16 @@ $chapitres = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                     <input type="hidden" name="id" value="<?= (int)$chapitre['id'] ?>">
                                                     <input type="hidden" name="visible" value="1">
                                                     <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 px-3 py-2 rounded-xl font-semibold text-sm">
-                                                        Activar
+                                                        <?= t('activate') ?>
                                                     </button>
                                                 </form>
                                             <?php endif; ?>
 
-                                            <form method="POST" class="inline" onsubmit="return confirm('¿Seguro que quieres eliminar este capítulo?');">
+                                            <form method="POST" class="inline" onsubmit="return confirm('<?= h(t('confirm_delete_chapter')) ?>');">
                                                 <input type="hidden" name="action" value="delete">
                                                 <input type="hidden" name="id" value="<?= (int)$chapitre['id'] ?>">
                                                 <button type="submit" class="bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded-xl font-semibold text-sm">
-                                                    Eliminar
+                                                    <?= t('delete') ?>
                                                 </button>
                                             </form>
                                         </div>

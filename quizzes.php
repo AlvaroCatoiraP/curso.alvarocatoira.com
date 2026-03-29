@@ -6,18 +6,18 @@ require_once __DIR__ . '/includes/db.php';
 exiger_connexion();
 
 $usuarioId = $_SESSION['user_id'] ?? $_SESSION['id'] ?? $_SESSION['usuario_id'] ?? null;
-$nombreUsuario = $_SESSION['user_nombre'] ?? 'Estudiante';
+$nombreUsuario = $_SESSION['user_nombre'] ?? t('student');
 
 if (!$usuarioId) {
-    die('Usuario no identificado.');
+    die(t('user_not_identified'));
 }
 
 $stmt = $pdo->prepare("
     SELECT 
         q.id,
         q.capitulo,
-        q.titulo,
-        q.descripcion,
+        COALESCE(qt.titulo, q.titulo) AS titulo,
+        COALESCE(qt.descripcion, q.descripcion) AS descripcion,
         q.duracion_minutos,
         (
             SELECT MAX(qi.nota)
@@ -26,10 +26,16 @@ $stmt = $pdo->prepare("
               AND qi.usuario_id = :usuario_id
         ) AS mejor_nota
     FROM quizzes q
+    LEFT JOIN quizzes_traducciones qt
+        ON qt.quiz_id = q.id
+       AND qt.lang = :lang
     WHERE q.activo = 1
     ORDER BY q.capitulo ASC
 ");
-$stmt->execute(['usuario_id' => $usuarioId]);
+$stmt->execute([
+    'usuario_id' => $usuarioId,
+    'lang' => $lang
+]);
 $quizzes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
@@ -37,7 +43,7 @@ $quizzes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quizzes</title>
+    <title><?= t('quizzes') ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-white min-h-screen">
@@ -48,12 +54,12 @@ $quizzes = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="max-w-7xl mx-auto p-6 md:p-8">
         <div class="flex justify-between items-center gap-4">
             <div>
-                <h1 class="text-3xl font-bold">Quizzes por capítulo</h1>
-                <p class="text-slate-400 mt-2">Hola <?= htmlspecialchars($nombreUsuario) ?>, aquí puedes evaluar tu progreso.</p>
+                <h1 class="text-3xl font-bold"><?= t('quizzes_by_chapter') ?></h1>
+                <p class="text-slate-400 mt-2"><?= t('hello_user') ?> <?= htmlspecialchars($nombreUsuario) ?>, <?= t('quiz_progress_text') ?></p>
             </div>
 
             <a href="dashboard.php" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl font-semibold">
-                ← Dashboard
+                ← <?= t('back_dashboard') ?>
             </a>
         </div>
 
@@ -61,7 +67,7 @@ $quizzes = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <?php foreach ($quizzes as $quiz): ?>
                 <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 hover:border-sky-500 transition">
                     <p class="text-sky-300 text-sm font-semibold uppercase tracking-wide">
-                        Capítulo <?= htmlspecialchars($quiz['capitulo']) ?>
+                        <?= t('chapter') ?> <?= htmlspecialchars($quiz['capitulo']) ?>
                     </p>
 
                     <h2 class="text-xl font-bold mt-2">
@@ -69,20 +75,20 @@ $quizzes = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </h2>
 
                     <p class="text-slate-400 mt-3 text-sm">
-                        <?= htmlspecialchars($quiz['descripcion'] ?? 'Quiz del capítulo.') ?>
+                        <?= htmlspecialchars($quiz['descripcion'] ?? t('chapter_quiz_default_desc')) ?>
                     </p>
 
                     <div class="mt-4 space-y-2 text-sm text-slate-300">
-                        <p><span class="text-slate-400">Duración:</span> <?= (int)$quiz['duracion_minutos'] ?> min</p>
+                        <p><span class="text-slate-400"><?= t('duration') ?>:</span> <?= (int)$quiz['duracion_minutos'] ?> min</p>
                         <p>
-                            <span class="text-slate-400">Mejor nota:</span>
-                            <?= $quiz['mejor_nota'] !== null ? number_format((float)$quiz['mejor_nota'], 1) . '/20' : 'Sin intento' ?>
+                            <span class="text-slate-400"><?= t('best_grade') ?>:</span>
+                            <?= $quiz['mejor_nota'] !== null ? number_format((float)$quiz['mejor_nota'], 1) . '/20' : t('no_attempt') ?>
                         </p>
                     </div>
 
                     <div class="mt-5">
                         <a href="quiz.php?id=<?= (int)$quiz['id'] ?>" class="inline-block bg-sky-500 hover:bg-sky-600 px-4 py-2 rounded-xl font-semibold">
-                            Empezar quiz
+                            <?= t('start_quiz') ?>
                         </a>
                     </div>
                 </div>

@@ -1,5 +1,6 @@
 <?php
 require_once 'includes/auth.php';
+require_once 'includes/lang.php';
 require_once 'includes/db.php';
 
 exiger_admin();
@@ -7,7 +8,7 @@ exiger_admin();
 $proyecto_id = isset($_GET['proyecto_id']) ? (int) $_GET['proyecto_id'] : 0;
 
 if ($proyecto_id <= 0) {
-    die("Proyecto no válido.");
+    die(t('invalid_project'));
 }
 
 $sqlProyecto = "SELECT * FROM proyectos WHERE id = ?";
@@ -16,7 +17,7 @@ $stmtProyecto->execute([$proyecto_id]);
 $proyecto = $stmtProyecto->fetch(PDO::FETCH_ASSOC);
 
 if (!$proyecto) {
-    die("Proyecto no encontrado.");
+    die(t('project_not_found'));
 }
 
 $error = '';
@@ -29,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fecha_limite = trim($_POST['fecha_limite'] ?? '');
 
     if ($titulo === '' || $descripcion === '' || $orden_entrega <= 0) {
-        $error = "Título, descripción y orden son obligatorios.";
+        $error = t('delivery_required_fields');
     } else {
         $fecha_limite_sql = null;
 
@@ -51,12 +52,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $fecha_limite_sql
             ]);
 
-            $success = "Entrega creada correctamente.";
+            $success = t('delivery_created_successfully');
         } catch (PDOException $e) {
             if ((int)$e->getCode() === 23000) {
-                $error = "Ya existe una entrega con ese orden dentro de este proyecto.";
+                $error = t('delivery_order_already_exists');
             } else {
-                $error = "Error al crear la entrega: " . $e->getMessage();
+                $error = t('delivery_create_error') . ': ' . $e->getMessage();
             }
         }
     }
@@ -73,11 +74,11 @@ $stmtEntregas->execute([$proyecto_id]);
 $entregas = $stmtEntregas->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="<?= htmlspecialchars($lang) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestionar entregas del proyecto</title>
+    <title><?= t('manage_project_deliveries') ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-white min-h-screen">
@@ -88,12 +89,12 @@ $entregas = $stmtEntregas->fetchAll(PDO::FETCH_ASSOC);
     <div class="max-w-6xl mx-auto p-8">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <div>
-                <h1 class="text-3xl font-bold">Entregas del proyecto</h1>
-                <p class="text-slate-400 mt-2">Añade fases secuenciales al proyecto.</p>
+                <h1 class="text-3xl font-bold"><?= t('project_deliveries') ?></h1>
+                <p class="text-slate-400 mt-2"><?= t('add_sequential_phases') ?></p>
             </div>
             <div class="flex gap-3 flex-wrap">
                 <a href="admin_proyectos.php" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl font-semibold">
-                    Volver a proyectos
+                    <?= t('back_to_projects') ?>
                 </a>
             </div>
         </div>
@@ -101,11 +102,11 @@ $entregas = $stmtEntregas->fetchAll(PDO::FETCH_ASSOC);
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-8">
             <h2 class="text-2xl font-bold"><?= htmlspecialchars($proyecto['titulo']) ?></h2>
             <p class="text-slate-300 mt-3 whitespace-pre-line"><?= htmlspecialchars($proyecto['descripcion']) ?></p>
-            <p class="text-sm text-slate-500 mt-4">Proyecto ID: <?= (int)$proyecto['id'] ?></p>
+            <p class="text-sm text-slate-500 mt-4"><?= t('project_id') ?>: <?= (int)$proyecto['id'] ?></p>
         </div>
 
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-10">
-            <h2 class="text-2xl font-bold mb-6">Crear nueva entrega</h2>
+            <h2 class="text-2xl font-bold mb-6"><?= t('create_new_delivery') ?></h2>
 
             <?php if ($error): ?>
                 <div class="mb-4 bg-red-500/10 border border-red-500/30 text-red-300 px-4 py-3 rounded-xl">
@@ -121,30 +122,30 @@ $entregas = $stmtEntregas->fetchAll(PDO::FETCH_ASSOC);
 
             <form method="POST" class="space-y-4">
                 <div>
-                    <label class="block mb-2 font-semibold">Título de la entrega</label>
+                    <label class="block mb-2 font-semibold"><?= t('delivery_title') ?></label>
                     <input
                         type="text"
                         name="titulo"
                         class="w-full p-3 rounded-xl bg-slate-800 border border-slate-700"
-                        placeholder="Ejemplo: Fase 1 - Diseño inicial"
+                        placeholder="<?= t('delivery_title_placeholder') ?>"
                         required
                     >
                 </div>
 
                 <div>
-                    <label class="block mb-2 font-semibold">Descripción</label>
+                    <label class="block mb-2 font-semibold"><?= t('description') ?></label>
                     <textarea
                         name="descripcion"
                         rows="6"
                         class="w-full p-3 rounded-xl bg-slate-800 border border-slate-700"
-                        placeholder="Explica qué debe hacer el alumno en esta fase"
+                        placeholder="<?= t('delivery_description_placeholder') ?>"
                         required
                     ></textarea>
                 </div>
 
                 <div class="grid md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block mb-2 font-semibold">Orden de la entrega</label>
+                        <label class="block mb-2 font-semibold"><?= t('delivery_order') ?></label>
                         <input
                             type="number"
                             name="orden_entrega"
@@ -156,7 +157,7 @@ $entregas = $stmtEntregas->fetchAll(PDO::FETCH_ASSOC);
                     </div>
 
                     <div>
-                        <label class="block mb-2 font-semibold">Fecha límite</label>
+                        <label class="block mb-2 font-semibold"><?= t('deadline') ?></label>
                         <input
                             type="datetime-local"
                             name="fecha_limite"
@@ -166,13 +167,13 @@ $entregas = $stmtEntregas->fetchAll(PDO::FETCH_ASSOC);
                 </div>
 
                 <button class="bg-sky-500 hover:bg-sky-600 px-5 py-3 rounded-xl font-semibold">
-                    Crear entrega
+                    <?= t('create_delivery') ?>
                 </button>
             </form>
         </div>
 
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-            <h2 class="text-2xl font-bold mb-6">Entregas creadas</h2>
+            <h2 class="text-2xl font-bold mb-6"><?= t('created_deliveries') ?></h2>
 
             <?php if (count($entregas) > 0): ?>
                 <div class="space-y-4">
@@ -189,12 +190,12 @@ $entregas = $stmtEntregas->fetchAll(PDO::FETCH_ASSOC);
                                     </p>
 
                                     <div class="mt-4 text-sm text-slate-400 space-y-1">
-                                        <p><strong>Orden:</strong> <?= (int)$entrega['orden_entrega'] ?></p>
+                                        <p><strong><?= t('order') ?>:</strong> <?= (int)$entrega['orden_entrega'] ?></p>
                                         <p>
-                                            <strong>Fecha límite:</strong>
-                                            <?= $entrega['fecha_limite'] ? htmlspecialchars($entrega['fecha_limite']) : 'Sin fecha límite' ?>
+                                            <strong><?= t('deadline') ?>:</strong>
+                                            <?= $entrega['fecha_limite'] ? htmlspecialchars($entrega['fecha_limite']) : t('no_deadline') ?>
                                         </p>
-                                        <p><strong>Creada:</strong> <?= htmlspecialchars($entrega['creado_en']) ?></p>
+                                        <p><strong><?= t('created_feminine') ?>:</strong> <?= htmlspecialchars($entrega['creado_en']) ?></p>
                                     </div>
                                 </div>
 
@@ -203,13 +204,13 @@ $entregas = $stmtEntregas->fetchAll(PDO::FETCH_ASSOC);
                                         href="admin_proyecto_entregas_alumnos.php?entrega_id=<?= (int)$entrega['id'] ?>"
                                         class="bg-emerald-500 hover:bg-emerald-600 px-4 py-2 rounded-xl font-semibold inline-block"
                                     >
-                                        Ver entregas de alumnos
+                                        <?= t('view_student_submissions') ?>
                                     </a>
                                     <a
                                         href="admin_editar_proyecto_entrega.php?id=<?= (int)$entrega['id'] ?>"
                                         class="bg-amber-500 hover:bg-amber-600 px-4 py-2 rounded-xl font-semibold inline-block"
                                     >
-                                        Editar entrega
+                                        <?= t('edit_delivery') ?>
                                     </a>
                                 </div>
                             </div>
@@ -217,9 +218,11 @@ $entregas = $stmtEntregas->fetchAll(PDO::FETCH_ASSOC);
                     <?php endforeach; ?>
                 </div>
             <?php else: ?>
-                <p class="text-slate-400">Todavía no hay entregas en este proyecto.</p>
+                <p class="text-slate-400"><?= t('no_project_deliveries_yet') ?></p>
             <?php endif; ?>
         </div>
     </div>
+</div>
+
 </body>
 </html>
