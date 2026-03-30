@@ -73,6 +73,27 @@ $stmtStudents->execute(['rol' => $studentRole]);
 $students = $stmtStudents->fetchAll(PDO::FETCH_ASSOC);
 
 /**
+ * Estudiantes conectados
+ * Consideramos conectados los que tuvieron actividad en los últimos 5 minutos
+ */
+$estudiantesConectados = [];
+try {
+    $sqlConectados = "
+        SELECT id, nombre, email, ultima_actividad
+        FROM usuarios
+        WHERE rol = :rol
+          AND ultima_actividad IS NOT NULL
+          AND ultima_actividad >= NOW() - INTERVAL 5 MINUTE
+        ORDER BY ultima_actividad DESC
+    ";
+    $stmtConectados = $pdo->prepare($sqlConectados);
+    $stmtConectados->execute(['rol' => $studentRole]);
+    $estudiantesConectados = $stmtConectados->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    $estudiantesConectados = [];
+}
+
+/**
  * Últimos capítulos
  */
 $chapitres = [];
@@ -108,12 +129,6 @@ try {
                 <p class="text-slate-400 mt-2">
                     <?= t('admin_panel_desc') ?>
                 </p>
-            </div>
-
-            <div class="flex flex-wrap gap-3">
-                <a href="dashboard.php" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl font-semibold transition">
-                    <?= t('student_panel') ?>
-                </a>
             </div>
         </header>
 
@@ -260,37 +275,29 @@ try {
             </div>
 
             <div>
-                <h2 class="text-2xl font-bold mb-4"><?= t('chapters_summary') ?></h2>
+                <h2 class="text-2xl font-bold mb-4"><?= t('connected_students') ?></h2>
 
                 <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
                     <div class="overflow-x-auto">
-                        <table class="w-full min-w-[600px]">
+                        <table class="w-full min-w-[650px]">
                             <thead class="bg-slate-800">
                                 <tr>
-                                    <th class="text-left p-4"><?= t('order') ?></th>
-                                    <th class="text-left p-4"><?= t('title_es') ?></th>
-                                    <th class="text-left p-4"><?= t('title_fr') ?></th>
-                                    <th class="text-left p-4"><?= t('visible') ?></th>
+                                    <th class="text-left p-4"><?= t('name') ?></th>
+                                    <th class="text-left p-4"><?= t('email') ?></th>
+                                    <th class="text-left p-4"><?= t('last_activity') ?></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php if (count($chapitres) === 0): ?>
+                                <?php if (count($estudiantesConectados) === 0): ?>
                                     <tr>
-                                        <td colspan="4" class="p-4 text-slate-400"><?= t('no_chapters_yet') ?></td>
+                                        <td colspan="3" class="p-4 text-slate-400"><?= t('no_connected_students') ?></td>
                                     </tr>
                                 <?php else: ?>
-                                    <?php foreach ($chapitres as $chapitre): ?>
+                                    <?php foreach ($estudiantesConectados as $estudiante): ?>
                                         <tr class="border-t border-slate-800">
-                                            <td class="p-4"><?= (int)$chapitre['ordre'] ?></td>
-                                            <td class="p-4"><?= h($chapitre['titre_es']) ?></td>
-                                            <td class="p-4"><?= h($chapitre['titre_fr']) ?></td>
-                                            <td class="p-4">
-                                                <?php if ((int)$chapitre['visible'] === 1): ?>
-                                                    <span class="text-emerald-400 font-semibold"><?= t('yes') ?></span>
-                                                <?php else: ?>
-                                                    <span class="text-red-400 font-semibold"><?= t('no') ?></span>
-                                                <?php endif; ?>
-                                            </td>
+                                            <td class="p-4"><?= h($estudiante['nombre']) ?></td>
+                                            <td class="p-4"><?= h($estudiante['email']) ?></td>
+                                            <td class="p-4"><?= h($estudiante['ultima_actividad']) ?></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
@@ -301,5 +308,7 @@ try {
             </div>
         </section>
     </div>
+</div>
+
 </body>
 </html>

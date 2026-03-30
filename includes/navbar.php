@@ -169,4 +169,16 @@ function buildLangUrl(string $langCode): string {
 function toggleMenu() {
     document.getElementById('mobileMenu').classList.toggle('hidden');
 }
+
+function enviarPingActividad() {
+    fetch('ping_actividad.php', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    }).catch(() => {});
+}
+
+enviarPingActividad();
+setInterval(enviarPingActividad, 60000);
 </script>
